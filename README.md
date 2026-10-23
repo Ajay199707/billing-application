@@ -76,7 +76,7 @@ billing_software/
 ### Mode A: Single Computer (Offline Standalone)
 - Runs out of the box with zero external dependencies.
 - Uses an embedded SQLite database in **WAL mode** (`PRAGMA journal_mode=WAL;`, `PRAGMA busy_timeout=5000;`, `PRAGMA foreign_keys=ON;`).
-- All business records persist locally under `%LOCALAPPDATA%\AntigravityBilling\shop_billing.db`.
+- All business records persist locally under `%LOCALAPPDATA%\AJBillingSoftware\shop_billing.db`.
 - Supports hot online backups using `sqlite3.backup()` without locking or stopping billing.
 
 ### Mode B: Multiple Computers in One Shop (Shared Local Network)
@@ -148,8 +148,8 @@ Tests verify:
 ```powershell
 python build_exe.py
 ```
-Generates a standalone directory in `dist/AntigravityBilling/`.
+Generates a standalone directory in `dist/AJBillingSoftware/`.
 
 ### Compile Windows Setup Installer
 Open `installer.iss` in [Inno Setup Compiler](https://jrsoftware.org/isdl.php) and click **Compile** (or run `ISCC.exe installer.iss`).
-This generates `output/AntigravityBilling_Setup_v1.0.0.exe` with desktop shortcuts, start menu entries, and uninstaller.
+This generates `output/AJBillingSoftware_Setup_v1.0.0.exe` with desktop shortcuts, start menu entries, and uninstaller.

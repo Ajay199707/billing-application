@@ -67,7 +67,7 @@ def number_to_words_inr(amount: float) -> str:
 class InvoicePrintService:
     def __init__(self, output_dir: Optional[Path] = None):
         if output_dir is None:
-            output_dir = Path.home() / ".antigravity_billing" / "invoices"
+            output_dir = Path.home() / ".aj_billing_software" / "invoices"
         self.output_dir = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
 

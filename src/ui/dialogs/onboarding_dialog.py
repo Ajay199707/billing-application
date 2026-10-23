@@ -39,7 +39,7 @@ class OnboardingDialog(QDialog):
         super().__init__(parent)
         self.db = db_manager
 
-        self.setWindowTitle("Initial Setup Wizard - Antigravity Billing System")
+        self.setWindowTitle("Initial Setup Wizard - AJ Billing Software")
         self.setFixedSize(540, 620)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
@@ -51,7 +51,7 @@ class OnboardingDialog(QDialog):
         layout.setSpacing(14)
 
         # Header
-        title = QLabel("Welcome to Antigravity Shop Management")
+        title = QLabel("Welcome to AJ Billing Software")
         title.setStyleSheet("font-size: 18px; font-weight: 700; color: #0F172A;")
         layout.addWidget(title)
 

@@ -18,7 +18,7 @@ class LoginDialog(QDialog):
         self.auth_service = auth_service
         self.authenticated_session: UserSession | None = None
 
-        self.setWindowTitle("Sign In - Antigravity Billing System")
+        self.setWindowTitle("Sign In - AJ Billing Software")
         self.setFixedSize(380, 420)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
@@ -30,7 +30,7 @@ class LoginDialog(QDialog):
         layout.setSpacing(16)
 
         # Title and Header
-        title_lbl = QLabel("Antigravity Retail POS")
+        title_lbl = QLabel("AJ Billing Software")
         title_lbl.setStyleSheet("font-size: 20px; font-weight: 700; color: #064E3B;")
         title_lbl.setAlignment(Qt.AlignCenter)
         layout.addWidget(title_lbl)

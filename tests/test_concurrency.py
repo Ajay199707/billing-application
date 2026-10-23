@@ -4,7 +4,7 @@ Verifies atomic stock locking and collision-free sequential invoice generation
 when multiple cashier threads attempt concurrent checkouts on limited inventory.
 """
 
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from decimal import Decimal
 import pytest
 
@@ -84,7 +84,7 @@ def test_concurrent_checkout_prevents_overselling(tmp_path):
     errors = []
 
     # Run 2 cashiers in parallel threads
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         f1 = executor.submit(cashier_checkout, "Cashier_A", Decimal("4.000"))
         f2 = executor.submit(cashier_checkout, "Cashier_B", Decimal("4.000"))
 
@@ -163,9 +163,9 @@ def test_concurrent_invoice_numbering(tmp_path):
         )
 
     invoice_numbers = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:
         futures = [executor.submit(checkout_one_pen, i) for i in range(10)]
-        for f in concurrent.futures.as_completed(futures):
+        for f in as_completed(futures):
             res = f.result()
             invoice_numbers.append(res["invoice_number"])
 

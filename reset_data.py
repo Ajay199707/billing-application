@@ -1,5 +1,5 @@
 """
-Data Reset Utility for Antigravity Billing System.
+Data Reset Utility for AJ Billing Software.
 Run this script to reset the admin password or completely wipe the database for a fresh start.
 """
 

@@ -29,9 +29,9 @@ def get_default_app_dir() -> Path:
     """Returns the application data directory in user profile."""
     app_data = os.environ.get("LOCALAPPDATA")
     if app_data:
-        base = Path(app_data) / "AntigravityBilling"
+        base = Path(app_data) / "AJBillingSoftware"
     else:
-        base = Path.home() / ".antigravity_billing"
+        base = Path.home() / ".aj_billing_software"
     base.mkdir(parents=True, exist_ok=True)
     return base
 
@@ -65,7 +65,7 @@ class DatabaseConfig(BaseModel):
 
 
 class AppConfig(BaseModel):
-    shop_name: str = "Antigravity Super Retail"
+    shop_name: str = "AJ Super Retail"
     business_profile: BusinessProfile = BusinessProfile.GENERAL
     currency_symbol: str = "₹"
     state_code: str = "33"  # Tamil Nadu default

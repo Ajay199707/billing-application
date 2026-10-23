@@ -1,5 +1,5 @@
 """
-Main Executable Entry Point for Antigravity Windows Billing, Inventory, GST and Shop Management System.
+Main Executable Entry Point for AJ Billing Software.
 """
 
 import sys

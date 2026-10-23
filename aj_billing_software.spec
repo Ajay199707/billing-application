@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-PyInstaller specification for compiling the Grocery & Supermarket Billing System
-into a standalone Windows executable.
+PyInstaller specification for compiling AJ Billing Software
+into a standalone Windows executable directory.
 """
 
 import sys
@@ -12,6 +12,8 @@ block_cipher = None
 added_files = [
     ('templates', 'templates'),
     ('docs', 'docs'),
+    ('alembic', 'alembic'),
+    ('alembic.ini', '.'),
 ]
 
 hidden_imports = [
@@ -32,6 +34,7 @@ hidden_imports = [
     'barcode',
     'barcode.writer',
     'PIL',
+    'pydantic',
 ]
 
 a = Analysis(
@@ -57,7 +60,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='GroceryBillingPOS',
+    name='AJBillingSoftware',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -79,5 +82,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='GroceryBillingPOS',
+    name='AJBillingSoftware',
 )

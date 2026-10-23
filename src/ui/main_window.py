@@ -61,7 +61,7 @@ class MainWindow(QMainWindow):
         self.reporting_service = reporting_service
         self.print_service = print_service
 
-        self.setWindowTitle("Antigravity Retail Billing, Inventory & Shop Management")
+        self.setWindowTitle("AJ Billing Software - Retail Billing, Inventory & Shop Management")
         self.resize(1280, 800)
         self.setMinimumSize(1024, 680)
 
@@ -84,7 +84,7 @@ class MainWindow(QMainWindow):
         side_layout.setSpacing(4)
 
         # App Brand Header
-        brand_lbl = QLabel("ANTIGRAVITY POS")
+        brand_lbl = QLabel("AJ BILLING POS")
         brand_lbl.setStyleSheet("color: #064E3B; font-size: 15px; font-weight: 800; padding: 6px 12px; letter-spacing: 1px;")
         side_layout.addWidget(brand_lbl)
 

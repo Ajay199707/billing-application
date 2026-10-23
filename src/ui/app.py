@@ -34,11 +34,11 @@ logger = logging.getLogger(__name__)
 def run_app():
     # Setup structured logging
     setup_logging()
-    logger.info("Starting Antigravity Windows Billing & POS Application...")
+    logger.info("Starting AJ Billing Software & POS Application...")
 
     app = QApplication(sys.argv)
-    app.setApplicationName("Antigravity Retail POS")
-    app.setOrganizationName("Antigravity")
+    app.setApplicationName("AJ Billing Software")
+    app.setOrganizationName("AJ Software")
     app.setStyleSheet(APP_STYLESHEET)
 
     # Load configuration

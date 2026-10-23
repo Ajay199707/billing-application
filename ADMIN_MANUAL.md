@@ -1,4 +1,4 @@
-# Antigravity Billing & Shop Management System
+# AJ Billing Software
 ## Administrator Manual
 
 ---

@@ -10,7 +10,7 @@ The application supports two production deployment architectures:
 |  Windows POS Terminal (Shop Billing App)              |
 |   +-----------------------------------------------+   |
 |   |  Embedded SQLite (WAL Mode + 64MB Cache)      |   |
-|   |  Path: %LOCALAPPDATA%\AntigravityBilling\     |   |
+|   |  Path: %LOCALAPPDATA%\AJBillingSoftware\      |   |
 |   +-----------------------------------------------+   |
 +-------------------------------------------------------+
 

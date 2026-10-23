@@ -18,7 +18,7 @@ def setup_logging(
     Sensitive credentials like passwords and tokens are never logged.
     """
     if log_dir is None:
-        log_dir = Path.home() / ".antigravity_billing" / "logs"
+        log_dir = Path.home() / ".aj_billing_software" / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
 
     log_file = log_dir / f"{app_name}.log"

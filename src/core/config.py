@@ -4,6 +4,7 @@ Application configuration, database connection parameters, and business profiles
 
 import json
 import os
+import sys
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -34,6 +35,15 @@ def get_default_app_dir() -> Path:
         base = Path.home() / ".aj_billing_software"
     base.mkdir(parents=True, exist_ok=True)
     return base
+
+
+def get_asset_path(filename: str = "app_icon.ico") -> Path:
+    """Returns absolute path to an asset, handling both development and PyInstaller frozen modes."""
+    if getattr(sys, "frozen", False):
+        base_dir = Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent))
+    else:
+        base_dir = Path(__file__).resolve().parent.parent.parent
+    return base_dir / "assets" / filename
 
 
 class DatabaseConfig(BaseModel):

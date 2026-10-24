@@ -4,11 +4,13 @@ Handles startup initialization, onboarding wizard detection, login flow, and Mai
 """
 
 import sys
+import ctypes
 import logging
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QDialog
 
-from src.core.config import AppConfig
+from src.core.config import AppConfig, get_asset_path
 from src.core.database import get_db_manager
 from src.core.logging import setup_logging
 from src.models import Shop, User
@@ -32,6 +34,10 @@ logger = logging.getLogger(__name__)
 
 
 def run_app():
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("AJSoftware.AJBillingSoftware.POS.1_0")
+    except Exception:
+        pass
     # Setup structured logging
     setup_logging()
     logger.info("Starting AJ Billing Software & POS Application...")
@@ -40,6 +46,12 @@ def run_app():
     app.setApplicationName("AJ Billing Software")
     app.setOrganizationName("AJ Software")
     app.setStyleSheet(APP_STYLESHEET)
+
+    icon_path = get_asset_path("app_icon.ico")
+    if not icon_path.exists():
+        icon_path = get_asset_path("app_icon.png")
+    if icon_path.exists():
+        app.setWindowIcon(QIcon(str(icon_path)))
 
     # Load configuration
     app_cfg = AppConfig.load()

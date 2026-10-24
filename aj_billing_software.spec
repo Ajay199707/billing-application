@@ -14,6 +14,7 @@ added_files = [
     ('docs', 'docs'),
     ('alembic', 'alembic'),
     ('alembic.ini', '.'),
+    ('assets', 'assets'),
 ]
 
 hidden_imports = [
@@ -71,7 +72,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,
+    icon='assets/app_icon.ico',
 )
 
 coll = COLLECT(

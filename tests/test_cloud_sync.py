@@ -127,3 +127,60 @@ def test_preserve_shop_pricing_on_resync(db_manager, test_shop_and_admin):
         assert p.purchase_cost == Decimal("230.00")  # Kept shop's cost!
         if p.inventory_balance:
             assert p.inventory_balance.quantity_on_hand == Decimal("40.00")
+
+MOCK_SHOP_PRICING = {
+    "shop_id": "SHOP_01",
+    "version": "1.0.0",
+    "price_updates": [
+        {
+            "sku": "GR-ATT-001",
+            "selling_price": 285.0,
+            "purchase_cost": 240.0,
+            "mrp": 300.0,
+        },
+        {
+            "barcode": "8906007281014",
+            "selling_price": 139.0,
+            "purchase_cost": 115.0,
+        },
+    ],
+}
+
+
+def test_shop_specific_pricing_update(db_manager, test_shop_and_admin):
+    from src.services.auth_service import AuthService
+    from src.services.cloud_sync_service import sync_shop_pricing_from_cloud
+    auth = AuthService(db_manager)
+    admin_session = auth.authenticate("admin", "AdminPassword123!")
+
+    # 1. First populate catalog items
+    sync_catalog_from_cloud(
+        db_manager=db_manager,
+        current_session=admin_session,
+        cloud_data=MOCK_CLOUD_DATA,
+        preserve_shop_prices=True,
+    )
+
+    # 2. Apply shop 01 custom pricing
+    res = sync_shop_pricing_from_cloud(
+        db_manager=db_manager,
+        current_session=admin_session,
+        shop_id="SHOP_01",
+        pricing_data=MOCK_SHOP_PRICING,
+    )
+
+    assert res["status"] == "success"
+    assert res["updated"] == 2
+    assert res["shop_id"] == "SHOP_01"
+
+    # 3. Verify prices in database
+    with db_manager.session() as session:
+        from src.models import Product
+        p1 = session.query(Product).filter_by(sku="GR-ATT-001").first()
+        assert p1.selling_price == Decimal("285.00")
+        assert p1.purchase_cost == Decimal("240.00")
+        assert p1.mrp == Decimal("300.00")
+
+        p2 = session.query(Product).filter_by(barcode="8906007281014").first()
+        assert p2.selling_price == Decimal("139.00")
+        assert p2.purchase_cost == Decimal("115.00")

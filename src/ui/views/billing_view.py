@@ -197,43 +197,52 @@ class BillingView(QWidget):
         self.cart_table.horizontalHeader().setSectionResizeMode(7, QHeaderView.ResizeToContents)
         self.cart_table.verticalHeader().setDefaultSectionSize(40)
         self.cart_table.verticalHeader().setVisible(False)
-        left_layout.addWidget(self.cart_table)
+        left_layout.addWidget(self.cart_table, 1)
 
-        # Action Buttons below Cart
+        # Action Buttons below Cart - High-Contrast and Crystal Clear
         btn_bar = QHBoxLayout()
-        self.clear_btn = QPushButton("Clear Cart (F4)")
+        btn_bar.setContentsMargins(0, 4, 0, 4)
+        btn_bar.setSpacing(10)
+
+        self.clear_btn = QPushButton("🗑️ Clear Cart (F4)")
         self.clear_btn.setObjectName("SecondaryBtn")
-        self.clear_btn.setFixedHeight(36)
+        self.clear_btn.setFixedHeight(38)
         self.clear_btn.setStyleSheet("""
             QPushButton {
                 background-color: #F8FAFC;
-                color: #334155;
-                font-weight: 600;
-                border: 1px solid #CBD5E1;
+                color: #0F172A;
+                font-weight: 700;
+                font-size: 13px;
+                border: 1.5px solid #94A3B8;
                 border-radius: 6px;
-                padding: 4px 14px;
+                padding: 6px 14px;
             }
             QPushButton:hover {
                 background-color: #E2E8F0;
+                color: #000000;
+                border-color: #64748B;
             }
         """)
         self.clear_btn.clicked.connect(self.clear_cart)
         btn_bar.addWidget(self.clear_btn)
 
-        self.reprint_btn = QPushButton("Reprint Last Bill (F8)")
+        self.reprint_btn = QPushButton("🖨️ Reprint Bill (F8)")
         self.reprint_btn.setObjectName("SecondaryBtn")
-        self.reprint_btn.setFixedHeight(36)
+        self.reprint_btn.setFixedHeight(38)
         self.reprint_btn.setStyleSheet("""
             QPushButton {
                 background-color: #F8FAFC;
-                color: #334155;
-                font-weight: 600;
-                border: 1px solid #CBD5E1;
+                color: #0F172A;
+                font-weight: 700;
+                font-size: 13px;
+                border: 1.5px solid #94A3B8;
                 border-radius: 6px;
-                padding: 4px 14px;
+                padding: 6px 14px;
             }
             QPushButton:hover {
                 background-color: #E2E8F0;
+                color: #000000;
+                border-color: #64748B;
             }
         """)
         self.reprint_btn.clicked.connect(self.reprint_last_bill)
@@ -241,38 +250,44 @@ class BillingView(QWidget):
 
         # Multi-Customer Fast Checkout: Hold & Recall
         self.hold_btn = QPushButton("⏸️ Hold Bill (F9)")
-        self.hold_btn.setFixedHeight(36)
+        self.hold_btn.setFixedHeight(38)
         self.hold_btn.setToolTip("Temporarily park this customer's cart so you can bill the next customer (F9)")
         self.hold_btn.setStyleSheet("""
             QPushButton {
                 background-color: #FEF3C7;
-                color: #92400E;
-                font-weight: 600;
-                border: 1px solid #FCD34D;
+                color: #78350F;
+                font-weight: 700;
+                font-size: 13px;
+                border: 1.5px solid #F59E0B;
                 border-radius: 6px;
-                padding: 4px 14px;
+                padding: 6px 14px;
             }
             QPushButton:hover {
                 background-color: #FDE68A;
+                color: #451A03;
+                border-color: #D97706;
             }
         """)
         self.hold_btn.clicked.connect(self._handle_hold_bill)
         btn_bar.addWidget(self.hold_btn)
 
         self.recall_btn = QPushButton("📂 Recall Bill (F10)")
-        self.recall_btn.setFixedHeight(36)
+        self.recall_btn.setFixedHeight(38)
         self.recall_btn.setToolTip("View and restore held customer baskets (F10)")
         self.recall_btn.setStyleSheet("""
             QPushButton {
                 background-color: #EFF6FF;
-                color: #1D4ED8;
-                font-weight: 600;
-                border: 1px solid #BFDBFE;
+                color: #1E40AF;
+                font-weight: 700;
+                font-size: 13px;
+                border: 1.5px solid #3B82F6;
                 border-radius: 6px;
-                padding: 4px 14px;
+                padding: 6px 14px;
             }
             QPushButton:hover {
                 background-color: #DBEAFE;
+                color: #172554;
+                border-color: #2563EB;
             }
         """)
         self.recall_btn.clicked.connect(self._handle_recall_bill)
@@ -298,8 +313,8 @@ class BillingView(QWidget):
             }
         """)
         right_layout = QVBoxLayout(right_panel)
-        right_layout.setContentsMargins(16, 16, 16, 16)
-        right_layout.setSpacing(12)
+        right_layout.setContentsMargins(14, 12, 14, 12)
+        right_layout.setSpacing(6)
 
         # Customer Details
         cust_title = QLabel("CUSTOMER DETAILS (OPTIONAL)")
@@ -307,27 +322,31 @@ class BillingView(QWidget):
         right_layout.addWidget(cust_title)
 
         self.cust_name_input = QLineEdit()
+        self.cust_name_input.setFixedHeight(30)
         self.cust_name_input.setPlaceholderText("Customer Name (Walk-in)")
         right_layout.addWidget(self.cust_name_input)
 
         self.cust_phone_input = QLineEdit()
+        self.cust_phone_input.setFixedHeight(30)
         self.cust_phone_input.setPlaceholderText("Phone Number")
         right_layout.addWidget(self.cust_phone_input)
 
         self.cust_gstin_input = QLineEdit()
+        self.cust_gstin_input.setFixedHeight(30)
         self.cust_gstin_input.setPlaceholderText("Customer GSTIN (B2B)")
         self.cust_gstin_input.setMaxLength(15)
         right_layout.addWidget(self.cust_gstin_input)
 
-        right_layout.addSpacing(6)
+        right_layout.addSpacing(2)
 
         # Invoice Discount Box
         disc_box = QHBoxLayout()
         disc_lbl = QLabel("Invoice Discount:")
-        disc_lbl.setStyleSheet("font-size: 12px; color: #475569;")
+        disc_lbl.setStyleSheet("font-size: 12px; font-weight: 600; color: #334155;")
         disc_box.addWidget(disc_lbl)
 
         self.inv_disc_spin = QDoubleSpinBox()
+        self.inv_disc_spin.setFixedHeight(30)
         self.inv_disc_spin.setRange(0, 100000)
         self.inv_disc_spin.setPrefix("₹ ")
         self.inv_disc_spin.setDecimals(2)
@@ -335,30 +354,30 @@ class BillingView(QWidget):
         disc_box.addWidget(self.inv_disc_spin)
         right_layout.addLayout(disc_box)
 
-        right_layout.addSpacing(6)
+        right_layout.addSpacing(4)
 
         # Summary Breakdown Box
         self.subtotal_lbl = QLabel("Subtotal Gross: ₹ 0.00")
-        self.subtotal_lbl.setStyleSheet("font-size: 12px; color: #475569;")
+        self.subtotal_lbl.setStyleSheet("font-size: 12px; color: #334155; font-weight: 600;")
         right_layout.addWidget(self.subtotal_lbl)
 
         self.taxable_lbl = QLabel("Taxable Amount: ₹ 0.00")
-        self.taxable_lbl.setStyleSheet("font-size: 12px; color: #475569;")
+        self.taxable_lbl.setStyleSheet("font-size: 12px; color: #334155; font-weight: 600;")
         right_layout.addWidget(self.taxable_lbl)
 
         self.cgst_lbl = QLabel("CGST: ₹ 0.00")
-        self.cgst_lbl.setStyleSheet("font-size: 12px; color: #475569;")
+        self.cgst_lbl.setStyleSheet("font-size: 12px; color: #334155; font-weight: 600;")
         right_layout.addWidget(self.cgst_lbl)
 
         self.sgst_lbl = QLabel("SGST: ₹ 0.00")
-        self.sgst_lbl.setStyleSheet("font-size: 12px; color: #475569;")
+        self.sgst_lbl.setStyleSheet("font-size: 12px; color: #334155; font-weight: 600;")
         right_layout.addWidget(self.sgst_lbl)
 
         self.round_off_lbl = QLabel("Round Off: ₹ 0.00")
-        self.round_off_lbl.setStyleSheet("font-size: 12px; color: #475569;")
+        self.round_off_lbl.setStyleSheet("font-size: 12px; color: #334155; font-weight: 600;")
         right_layout.addWidget(self.round_off_lbl)
 
-        right_layout.addSpacing(10)
+        right_layout.addSpacing(4)
 
         # Large Payable Amount Card
         amt_card = QFrame()
@@ -375,7 +394,8 @@ class BillingView(QWidget):
             }
         """)
         amt_box = QVBoxLayout(amt_card)
-        amt_box.setContentsMargins(12, 12, 12, 12)
+        amt_box.setContentsMargins(10, 8, 10, 8)
+        amt_box.setSpacing(2)
 
         payable_header = QLabel("AMOUNT PAYABLE")
         payable_header.setStyleSheet("color: #A7F3D0; font-size: 11px; font-weight: 700; letter-spacing: 1px;")
@@ -383,7 +403,7 @@ class BillingView(QWidget):
         amt_box.addWidget(payable_header)
 
         self.grand_total_lbl = QLabel("₹ 0.00")
-        self.grand_total_lbl.setStyleSheet("color: #34D399; font-size: 34px; font-weight: 800;")
+        self.grand_total_lbl.setStyleSheet("color: #34D399; font-size: 28px; font-weight: 800;")
         self.grand_total_lbl.setAlignment(Qt.AlignCenter)
         amt_box.addWidget(self.grand_total_lbl)
         right_layout.addWidget(amt_card)
@@ -393,7 +413,7 @@ class BillingView(QWidget):
         # Checkout Button - Vibrant High-Contrast Green with Bold Title
         self.checkout_btn = QPushButton("COMPLETE SALE (F12)")
         self.checkout_btn.setObjectName("CheckoutBtn")
-        self.checkout_btn.setFixedHeight(54)
+        self.checkout_btn.setFixedHeight(48)
         self.checkout_btn.setStyleSheet("""
             QPushButton#CheckoutBtn {
                 background-color: #059669;
@@ -703,6 +723,7 @@ class BillingView(QWidget):
                 unit_price=i.price,
                 line_discount=i.discount,
                 variant_id=i.variant_id,
+                gst_rate=i.gst_rate,
             )
             for i in self.cart_items
         ]

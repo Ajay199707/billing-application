@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from src.core.database import DatabaseManager
 from src.core.exceptions import BillingSystemError, PermissionDeniedError
-from src.models import Shop, ShopSettings, AuditLog
+from src.models import Shop, ShopSettings, AuditLog, ApplicationSettings
 from src.services.auth_service import UserSession
 
 logger = logging.getLogger(__name__)
@@ -158,3 +158,29 @@ class SettingsService:
     def get_available_profiles(self) -> Dict[str, Any]:
         """Returns the dictionary of all supported business profiles and metadata."""
         return BUSINESS_PROFILES_METADATA
+
+    def get_cloud_shop_id(self) -> str:
+        """Returns the configured Cloud Shop ID (e.g. SHOP_01) used for remote price updates."""
+        with self.db.session() as session:
+            row = session.query(ApplicationSettings).filter_by(key="cloud_shop_id").first()
+            if row:
+                try:
+                    return str(json.loads(row.value_json))
+                except Exception:
+                    return str(row.value_json).strip('"')
+            return "SHOP_01"
+
+    def set_cloud_shop_id(self, shop_id: str) -> None:
+        """Sets the Cloud Shop ID for automatic remote pricing sync."""
+        clean_id = (shop_id or "SHOP_01").strip().upper()
+        with self.db.session() as session:
+            row = session.query(ApplicationSettings).filter_by(key="cloud_shop_id").first()
+            if not row:
+                row = ApplicationSettings(
+                    key="cloud_shop_id",
+                    value_json=json.dumps(clean_id),
+                    description="Cloud Sync Shop Identifier",
+                )
+                session.add(row)
+            else:
+                row.value_json = json.dumps(clean_id)

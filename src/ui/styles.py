@@ -32,12 +32,12 @@ QWidget {
     background-color: transparent;
     color: #065F46;
     text-align: left;
-    padding: 10px 16px;
-    font-size: 13px;
-    font-weight: 600;
+    padding: 7px 14px;
+    font-size: 12.5px;
+    font-weight: 700;
     border: none;
     border-radius: 6px;
-    margin: 2px 8px;
+    margin: 1px 6px;
 }
 
 #SidebarWidget QPushButton:hover {

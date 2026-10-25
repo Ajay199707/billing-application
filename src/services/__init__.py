@@ -21,6 +21,10 @@ from src.services.cloud_sync_service import (
     sync_catalog_from_cloud,
     CloudSyncError,
     DEFAULT_CLOUD_CATALOG_URL,
+    fetch_shop_pricing,
+    sync_shop_pricing_from_cloud,
+    run_auto_sync_on_startup,
+    DEFAULT_SHOP_PRICING_URL_TEMPLATE,
 )
 
 # Alias for backwards compatibility
@@ -50,4 +54,8 @@ __all__ = [
     "sync_catalog_from_cloud",
     "CloudSyncError",
     "DEFAULT_CLOUD_CATALOG_URL",
+    "fetch_shop_pricing",
+    "sync_shop_pricing_from_cloud",
+    "run_auto_sync_on_startup",
+    "DEFAULT_SHOP_PRICING_URL_TEMPLATE",
 ]

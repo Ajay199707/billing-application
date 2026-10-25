@@ -63,10 +63,12 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("AJ Billing Software - Retail Billing, Inventory & Shop Management")
         self.resize(1280, 800)
-        self.setMinimumSize(1024, 680)
+        self.setMinimumSize(1024, 620)
 
         self.nav_buttons = []
         self._init_ui()
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(1500, self._trigger_auto_sync_on_startup)
 
     def _init_ui(self):
         central_widget = QWidget()
@@ -80,8 +82,8 @@ class MainWindow(QMainWindow):
         sidebar = QFrame()
         sidebar.setObjectName("SidebarWidget")
         side_layout = QVBoxLayout(sidebar)
-        side_layout.setContentsMargins(10, 16, 10, 16)
-        side_layout.setSpacing(4)
+        side_layout.setContentsMargins(8, 10, 8, 10)
+        side_layout.setSpacing(2)
 
         # App Brand Header
         brand_lbl = QLabel("AJ BILLING POS")
@@ -283,3 +285,49 @@ class MainWindow(QMainWindow):
         if reply == QMessageBox.Yes:
             self.logged_out = True
             self.close()
+
+    def _trigger_auto_sync_on_startup(self):
+        """Asynchronously checks GitHub for new catalog items and shop price updates."""
+        from concurrent.futures import ThreadPoolExecutor
+        from PySide6.QtCore import QTimer
+        from src.services.cloud_sync_service import run_auto_sync_on_startup
+
+        shop_id = "SHOP_01"
+        try:
+            shop_id = self.settings_service.get_cloud_shop_id()
+        except Exception:
+            pass
+
+        def _worker():
+            try:
+                return run_auto_sync_on_startup(
+                    db_manager=self.db,
+                    current_session=self.current_session,
+                    shop_id=shop_id,
+                )
+            except Exception as e:
+                return {"success": False, "error": str(e)}
+
+        executor = ThreadPoolExecutor(max_workers=1)
+        future = executor.submit(_worker)
+
+        def _check_result():
+            if future.done():
+                try:
+                    res = future.result()
+                    if res.get("success") and (res.get("new_products", 0) > 0 or res.get("shop_prices_updated", 0) > 0):
+                        msg = f"☁️ {res.get('message', 'Cloud Sync Complete')}"
+                        self.statusBar().showMessage(msg, 12000)
+                        curr_widget = self.stack.currentWidget()
+                        if hasattr(curr_widget, "refresh_products"):
+                            curr_widget.refresh_products()
+                        elif hasattr(curr_widget, "update_totals"):
+                            curr_widget.update_totals()
+                except Exception:
+                    pass
+                poll_timer.stop()
+
+        poll_timer = QTimer(self)
+        poll_timer.setInterval(500)
+        poll_timer.timeout.connect(_check_result)
+        poll_timer.start()

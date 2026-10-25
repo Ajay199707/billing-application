@@ -51,6 +51,7 @@ class CartItemInput:
     line_discount: Decimal = Decimal("0.00")
     variant_id: Optional[int] = None
     batch_id: Optional[int] = None
+    gst_rate: Optional[Decimal] = None
 
 
 @dataclass
@@ -153,7 +154,7 @@ class BillingService:
                     raise BillingSystemError(f"Product #{item.product_id} is unavailable or inactive.")
 
                 price = item.unit_price if item.unit_price is not None else prod.selling_price
-                gst_rate = prod.tax_profile.gst_rate if prod.tax_profile else Decimal("0.00")
+                gst_rate = item.gst_rate if item.gst_rate is not None else (prod.tax_profile.gst_rate if prod.tax_profile else Decimal("0.00"))
                 hsn_code = prod.tax_profile.hsn_sac_code if prod.tax_profile else "0000"
                 unit_code = prod.unit.code if prod.unit else "PCS"
 

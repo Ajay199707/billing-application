@@ -1,0 +1,24 @@
+{
+  "shop_id": "SHOP_01",
+  "version": "1.0.0",
+  "last_updated": "2026-10-25",
+  "description": "Developer-Managed Retail Pricing Overrides for Shop 01",
+  "price_updates": [
+    {
+      "name": "Fortune Sunlite Refined Sunflower Oil 1L Pouch",
+      "sku": "FORT-SUN-1L",
+      "barcode": "8906007281012",
+      "selling_price": 135.0,
+      "purchase_cost": 118.0,
+      "mrp": 145.0
+    },
+    {
+      "name": "Aachi Chilli Powder 200g",
+      "sku": "AACHI-CHILLI-200G",
+      "barcode": "8901777011017",
+      "selling_price": 60.0,
+      "purchase_cost": 48.0,
+      "mrp": 65.0
+    }
+  ]
+}

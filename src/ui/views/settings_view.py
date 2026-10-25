@@ -101,6 +101,10 @@ class SettingsView(QWidget):
             self.profile_combo.addItem(f"{meta['display_name']} - {meta['description']}", k)
         form1.addRow("Business Category *:", self.profile_combo)
 
+        self.cloud_shop_id_input = QLineEdit()
+        self.cloud_shop_id_input.setPlaceholderText("e.g. SHOP_01")
+        form1.addRow("Cloud Sync Shop ID (Remote Pricing) *:", self.cloud_shop_id_input)
+
         self.prefix_input = QLineEdit()
         form1.addRow("Invoice Prefix:", self.prefix_input)
 
@@ -244,6 +248,8 @@ class SettingsView(QWidget):
 
         try:
             self.settings_service.update_shop_details(self.current_session, details)
+            if hasattr(self, "cloud_shop_id_input") and self.cloud_shop_id_input.text().strip():
+                self.settings_service.set_cloud_shop_id(self.cloud_shop_id_input.text().strip())
             QMessageBox.information(self, "Settings Saved", "System and Shop configuration updated successfully.")
         except Exception as e:
             QMessageBox.critical(self, "Error Saving Settings", str(e))

@@ -169,3 +169,152 @@ def sync_catalog_from_cloud(
         "version": cloud_data.get("catalog_version", "1.0.0"),
         "last_updated": cloud_data.get("last_updated", ""),
     }
+
+# Template for per-shop custom pricing hosted on GitHub Raw CDN
+DEFAULT_SHOP_PRICING_URL_TEMPLATE = (
+    "https://raw.githubusercontent.com/Ajay199707/billing-application/main/catalog/shops/{shop_id}_pricing.json"
+)
+
+
+def fetch_shop_pricing(
+    shop_id: str,
+    base_url_template: str = DEFAULT_SHOP_PRICING_URL_TEMPLATE,
+    timeout: int = 10,
+) -> Optional[Dict[str, Any]]:
+    """
+    Downloads shop-specific pricing overrides from GitHub raw CDN.
+    Returns None if file doesn't exist (HTTP 404) or network is unavailable.
+    """
+    clean_id = (shop_id or "SHOP_01").strip().upper()
+    url = base_url_template.format(shop_id=clean_id)
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "AJBillingSoftware-POS/1.0 (Windows; ShopPricingSync)"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            if response.status == 200:
+                raw_bytes = response.read().decode("utf-8")
+                return json.loads(raw_bytes)
+            return None
+    except urllib.error.HTTPError as err:
+        if err.code == 404:
+            logger.info(f"No custom pricing file found for shop {clean_id} (HTTP 404).")
+            return None
+        logger.warning(f"HTTP error fetching shop pricing for {clean_id}: {err}")
+        return None
+    except Exception as exc:
+        logger.warning(f"Could not connect to fetch shop pricing for {clean_id}: {exc}")
+        return None
+
+
+def sync_shop_pricing_from_cloud(
+    db_manager: DatabaseManager,
+    current_session: UserSession,
+    shop_id: str,
+    pricing_data: Optional[Dict[str, Any]] = None,
+    base_url_template: str = DEFAULT_SHOP_PRICING_URL_TEMPLATE,
+) -> Dict[str, Any]:
+    """
+    Applies developer-managed custom pricing for a specific shop.
+    Updates selling_price, purchase_cost, and mrp.
+    Leaves stock quantities untouched!
+    """
+    clean_id = (shop_id or "SHOP_01").strip().upper()
+    if pricing_data is None:
+        pricing_data = fetch_shop_pricing(shop_id=clean_id, base_url_template=base_url_template)
+
+    if not pricing_data:
+        return {"status": "skipped", "updated": 0, "shop_id": clean_id, "reason": "No pricing file"}
+
+    price_updates = pricing_data.get("price_updates", [])
+    updated_count = 0
+
+    with db_manager.session() as session:
+        for item in price_updates:
+            barcode = str(item.get("barcode", "")).strip()
+            sku = str(item.get("sku", "")).strip()
+            if not barcode and not sku:
+                continue
+
+            query = session.query(Product)
+            prod = None
+            if barcode:
+                prod = query.filter_by(barcode=barcode).first()
+            if not prod and sku:
+                prod = query.filter_by(sku=sku).first()
+
+            if prod:
+                if "selling_price" in item:
+                    prod.selling_price = Decimal(str(item["selling_price"]))
+                if "purchase_cost" in item:
+                    prod.purchase_cost = Decimal(str(item["purchase_cost"]))
+                if "mrp" in item:
+                    prod.mrp = Decimal(str(item["mrp"]))
+                updated_count += 1
+
+    return {
+        "status": "success",
+        "updated": updated_count,
+        "shop_id": clean_id,
+        "version": pricing_data.get("version", "1.0.0"),
+    }
+
+
+def run_auto_sync_on_startup(
+    db_manager: DatabaseManager,
+    current_session: UserSession,
+    shop_id: str = "SHOP_01",
+) -> Dict[str, Any]:
+    """
+    Executed silently in background on application startup.
+    1. Downloads any brand-new grocery items added by developer to master catalog
+    2. Downloads and updates developer-managed retail prices for this specific shop
+    Never throws uncaught exceptions or blocks offline store operations.
+    """
+    clean_id = (shop_id or "SHOP_01").strip().upper()
+    result = {
+        "success": False,
+        "shop_id": clean_id,
+        "new_products": 0,
+        "master_refreshed": 0,
+        "shop_prices_updated": 0,
+        "message": "",
+    }
+
+    # 1. Sync Master Catalog
+    try:
+        master_res = sync_catalog_from_cloud(
+            db_manager=db_manager,
+            current_session=current_session,
+            preserve_shop_prices=True,
+        )
+        result["new_products"] = master_res.get("created", 0)
+        result["master_refreshed"] = master_res.get("updated", 0)
+    except Exception as exc:
+        logger.info(f"Startup master catalog sync skipped: {exc}")
+
+    # 2. Sync Shop-Specific Pricing
+    try:
+        shop_res = sync_shop_pricing_from_cloud(
+            db_manager=db_manager,
+            current_session=current_session,
+            shop_id=clean_id,
+        )
+        result["shop_prices_updated"] = shop_res.get("updated", 0)
+        result["success"] = True
+    except Exception as exc:
+        logger.info(f"Startup shop pricing sync skipped: {exc}")
+
+    parts = []
+    if result["new_products"] > 0:
+        parts.append(f"{result['new_products']} new products added")
+    if result["shop_prices_updated"] > 0:
+        parts.append(f"{result['shop_prices_updated']} prices updated by Developer")
+
+    if parts:
+        result["message"] = f"Cloud Sync ({clean_id}): " + ", ".join(parts)
+    else:
+        result["message"] = f"Cloud Sync ({clean_id}): Up to date"
+
+    return result

@@ -69,11 +69,17 @@ class ProductsView(QWidget):
         self.export_btn.clicked.connect(self._handle_export_excel)
         top_bar.addWidget(self.export_btn)
 
-        self.starter_catalog_btn = QPushButton("🛒 Load Starter Grocery Catalog")
+        self.starter_catalog_btn = QPushButton("🛒 Starter Catalog")
         self.starter_catalog_btn.setObjectName("SecondaryBtn")
         self.starter_catalog_btn.setStyleSheet("font-weight: 600; color: #064E3B; background: #ECFDF5; border: 1px solid #10B981;")
         self.starter_catalog_btn.clicked.connect(self._handle_load_starter_catalog)
         top_bar.addWidget(self.starter_catalog_btn)
+
+        self.cloud_sync_btn = QPushButton("☁️ Sync Cloud Catalog")
+        self.cloud_sync_btn.setObjectName("SecondaryBtn")
+        self.cloud_sync_btn.setStyleSheet("font-weight: 600; color: #1D4ED8; background: #EFF6FF; border: 1px solid #3B82F6;")
+        self.cloud_sync_btn.clicked.connect(self._handle_cloud_sync)
+        top_bar.addWidget(self.cloud_sync_btn)
 
         self.add_btn = QPushButton("+ Add New Product")
         self.add_btn.setObjectName("PrimaryBtn")
@@ -264,3 +270,58 @@ class ProductsView(QWidget):
                 self.refresh_products()
             except Exception as e:
                 QMessageBox.critical(self, "Catalog Import Error", f"Failed to import starter catalog:\n{e}")
+
+    def _handle_cloud_sync(self):
+        reply = QMessageBox.question(
+            self,
+            "Sync Cloud Master Catalog",
+            "Connect to the central cloud repository to download new products, brands, and barcode updates?\n\n"
+            "• New products added by Admin will appear automatically\n"
+            "• Existing products will have categories and barcodes refreshed\n"
+            "• Your shop's custom selling prices, purchase costs, and stock levels will NOT be overwritten.\n\n"
+            "Do you want to sync now?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.Yes,
+        )
+        if reply != QMessageBox.Yes:
+            return
+
+        self.cloud_sync_btn.setEnabled(False)
+        self.cloud_sync_btn.setText("☁️ Syncing...")
+        try:
+            from src.services.cloud_sync_service import sync_catalog_from_cloud, CloudSyncError
+            res = sync_catalog_from_cloud(
+                db_manager=self.product_service.db,
+                current_session=self.current_session,
+                preserve_shop_prices=True,
+            )
+            QMessageBox.information(
+                self,
+                "Cloud Sync Complete",
+                f"Cloud Master Catalog synchronized successfully!\n\n"
+                f"• Catalog Version: {res.get('version', '1.0.0')}\n"
+                f"• {res.get('created', 0)} new products added\n"
+                f"• {res.get('updated', 0)} existing products updated\n"
+                f"• Total catalog items: {res.get('total_cloud', 0)}\n\n"
+                f"Your store's local selling prices and inventory were safely preserved.",
+            )
+            self._refresh_category_filter()
+            self.refresh_products()
+        except Exception as exc:
+            from src.services.cloud_sync_service import CloudSyncError
+            if isinstance(exc, CloudSyncError):
+                QMessageBox.warning(
+                    self,
+                    "Cloud Sync Unavailable",
+                    f"Could not sync with cloud master catalog:\n\n{exc}\n\n"
+                    "Please verify your internet connection or try again later.",
+                )
+            else:
+                QMessageBox.critical(
+                    self,
+                    "Sync Error",
+                    f"An unexpected error occurred during cloud sync:\n\n{exc}",
+                )
+        finally:
+            self.cloud_sync_btn.setEnabled(True)
+            self.cloud_sync_btn.setText("☁️ Sync Cloud Catalog")

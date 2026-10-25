@@ -6,7 +6,7 @@ Shown on first launch to configure shop profile, GST state, and root Administrat
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QComboBox, QMessageBox, QGroupBox, QFormLayout
+    QPushButton, QComboBox, QMessageBox, QGroupBox, QFormLayout, QCheckBox
 )
 
 from src.core.database import DatabaseManager
@@ -40,7 +40,7 @@ class OnboardingDialog(QDialog):
         self.db = db_manager
 
         self.setWindowTitle("Initial Setup Wizard - AJ Billing Software")
-        self.setFixedSize(540, 620)
+        self.setFixedSize(540, 640)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
         self._init_ui()
@@ -107,7 +107,7 @@ class OnboardingDialog(QDialog):
 
         self.admin_pass_input = QLineEdit()
         self.admin_pass_input.setEchoMode(QLineEdit.Password)
-        self.admin_pass_input.setPlaceholderText("Minimum 8 characters")
+        self.admin_pass_input.setPlaceholderText("Minimum 6 characters")
         form2.addRow("Password *:", self.admin_pass_input)
 
         self.admin_pass_confirm = QLineEdit()
@@ -116,6 +116,12 @@ class OnboardingDialog(QDialog):
         form2.addRow("Confirm Password *:", self.admin_pass_confirm)
 
         layout.addWidget(admin_group)
+
+        # Starter Catalog Option
+        self.load_catalog_check = QCheckBox("Pre-load starter Supermarket catalog (80+ grocery products, barcodes & GST)")
+        self.load_catalog_check.setChecked(True)
+        self.load_catalog_check.setStyleSheet("color: #064E3B; font-weight: 600; padding: 4px 0;")
+        layout.addWidget(self.load_catalog_check)
 
         layout.addStretch()
 
@@ -177,6 +183,21 @@ class OnboardingDialog(QDialog):
                 admin_full_name=admin_name,
                 business_profile=profile_key,
             )
+
+            # Auto-seed starter catalog if checked
+            if self.load_catalog_check.isChecked():
+                try:
+                    from src.services.auth_service import UserSession
+                    from src.services.master_catalog_service import seed_starter_catalog
+                    from src.models import User
+                    with self.db.session() as s:
+                        admin_u = s.query(User).filter_by(username=admin_user).first()
+                        if admin_u:
+                            admin_sess = UserSession(admin_u.id, admin_u.username, admin_u.full_name, True, set())
+                            seed_starter_catalog(self.db, admin_sess)
+                except Exception as cat_err:
+                    print(f"Warning: could not seed starter catalog: {cat_err}")
+
             QMessageBox.information(
                 self,
                 "Setup Completed",

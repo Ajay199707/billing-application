@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 
 from src.services.product_service import ProductService
 from src.services.auth_service import UserSession
+from src.services.master_catalog_service import lookup_barcode
 
 
 class ProductDialog(QDialog):
@@ -55,8 +56,16 @@ class ProductDialog(QDialog):
         form1.addRow("SKU / Code *:", self.sku_input)
 
         self.barcode_input = QLineEdit()
-        self.barcode_input.setPlaceholderText("Scan barcode or leave empty to auto-generate")
-        form1.addRow("Barcode:", self.barcode_input)
+        self.barcode_input.setPlaceholderText("Scan barcode (Auto-fills from Master Catalog!)")
+        self.barcode_input.textChanged.connect(self._on_barcode_scanned)
+        self.barcode_input.returnPressed.connect(self._on_barcode_scanned)
+        bc_box = QVBoxLayout()
+        bc_box.setSpacing(2)
+        bc_box.addWidget(self.barcode_input)
+        self.barcode_status_lbl = QLabel("")
+        self.barcode_status_lbl.setStyleSheet("color: #047857; font-size: 11px;")
+        bc_box.addWidget(self.barcode_status_lbl)
+        form1.addRow("Barcode:", bc_box)
 
         # Editable Category ComboBox with Live Suggestion
         self.category_combo = QComboBox()
@@ -299,3 +308,56 @@ class ProductDialog(QDialog):
             self.accept()
         except Exception as exc:
             QMessageBox.critical(self, "Error Saving Product", str(exc))
+
+    def _on_barcode_scanned(self):
+        code = self.barcode_input.text().strip()
+        if not code:
+            self.barcode_status_lbl.setText("")
+            return
+
+        if self.product_id is not None:
+            return
+
+        matched = lookup_barcode(code)
+        if matched:
+            self.name_input.setText(matched["name"])
+            self.sku_input.setText(matched["sku"])
+
+            cat_idx = self.category_combo.findText(matched["category"])
+            if cat_idx >= 0:
+                self.category_combo.setCurrentIndex(cat_idx)
+            else:
+                self.category_combo.setCurrentText(matched["category"])
+
+            brand_idx = self.brand_combo.findText(matched["brand"])
+            if brand_idx >= 0:
+                self.brand_combo.setCurrentIndex(brand_idx)
+            else:
+                self.brand_combo.setCurrentText(matched["brand"])
+
+            for i in range(self.unit_combo.count()):
+                if matched["unit"] in self.unit_combo.itemText(i):
+                    self.unit_combo.setCurrentIndex(i)
+                    break
+
+            tax_str = matched["tax_name"]
+            for i in range(self.tax_combo.count()):
+                txt = self.tax_combo.itemText(i)
+                if ("5%" in tax_str and "5%" in txt) or \
+                   ("12%" in tax_str and "12%" in txt) or \
+                   ("18%" in tax_str and "18%" in txt) or \
+                   ("0%" in tax_str and ("0%" in txt or "Exempt" in txt)):
+                    self.tax_combo.setCurrentIndex(i)
+                    break
+
+            self.cost_spin.setValue(float(matched["purchase_cost"]))
+            self.price_spin.setValue(float(matched["selling_price"]))
+            self.mrp_spin.setValue(float(matched["mrp"]))
+            self.barcode_status_lbl.setText(f"✓ Recognized: {matched['name']}")
+            self.barcode_status_lbl.setStyleSheet("color: #047857; font-weight: bold; font-size: 11px;")
+        else:
+            if len(code) >= 6:
+                self.barcode_status_lbl.setText("New barcode (enter product details to register)")
+                self.barcode_status_lbl.setStyleSheet("color: #64748B; font-size: 11px;")
+            else:
+                self.barcode_status_lbl.setText("")

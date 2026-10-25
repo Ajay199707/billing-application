@@ -69,6 +69,12 @@ class ProductsView(QWidget):
         self.export_btn.clicked.connect(self._handle_export_excel)
         top_bar.addWidget(self.export_btn)
 
+        self.starter_catalog_btn = QPushButton("🛒 Load Starter Grocery Catalog")
+        self.starter_catalog_btn.setObjectName("SecondaryBtn")
+        self.starter_catalog_btn.setStyleSheet("font-weight: 600; color: #064E3B; background: #ECFDF5; border: 1px solid #10B981;")
+        self.starter_catalog_btn.clicked.connect(self._handle_load_starter_catalog)
+        top_bar.addWidget(self.starter_catalog_btn)
+
         self.add_btn = QPushButton("+ Add New Product")
         self.add_btn.setObjectName("PrimaryBtn")
         self.add_btn.clicked.connect(self._handle_add_product)
@@ -232,3 +238,29 @@ class ProductsView(QWidget):
                 self.refresh_products()
             except Exception as e:
                 QMessageBox.critical(self, "Import Error", str(e))
+
+    def _handle_load_starter_catalog(self):
+        reply = QMessageBox.question(
+            self,
+            "Load Starter Grocery Catalog",
+            "This will load 80+ fast-moving supermarket products (Atta, Rice, Dals, Oils, Spices, Dairy, Snacks, Soaps & Cleaning) with official barcodes, HSN codes, and GST rates.\n\n"
+            "Existing products with matching barcodes will be refreshed.\n\n"
+            "Do you want to proceed?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.Yes,
+        )
+        if reply == QMessageBox.Yes:
+            try:
+                from src.services.master_catalog_service import seed_starter_catalog
+                created, updated = seed_starter_catalog(self.product_service.db, self.current_session)
+                QMessageBox.information(
+                    self,
+                    "Catalog Loaded",
+                    f"Starter Grocery Catalog successfully loaded!\n\n"
+                    f"• {created} new products created\n"
+                    f"• {updated} existing products updated",
+                )
+                self._refresh_category_filter()
+                self.refresh_products()
+            except Exception as e:
+                QMessageBox.critical(self, "Catalog Import Error", f"Failed to import starter catalog:\n{e}")

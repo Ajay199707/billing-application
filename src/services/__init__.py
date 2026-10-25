@@ -15,6 +15,7 @@ from src.services.purchase_service import PurchaseService
 from src.services.reporting_service import ReportingService
 from src.services.settings_service import SettingsService
 from src.services.tax_service import TaxEngine, round_currency
+from src.services.master_catalog_service import lookup_barcode, seed_starter_catalog
 
 # Alias for backwards compatibility
 TaxService = TaxEngine
@@ -37,4 +38,6 @@ __all__ = [
     "TaxEngine",
     "TaxService",
     "round_currency",
+    "lookup_barcode",
+    "seed_starter_catalog",
 ]

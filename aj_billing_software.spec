@@ -15,6 +15,8 @@ added_files = [
     ('alembic', 'alembic'),
     ('alembic.ini', '.'),
     ('assets', 'assets'),
+    ('Master_Grocery_Catalog.xlsx', '.'),
+    ('catalog', 'catalog'),
 ]
 
 hidden_imports = [

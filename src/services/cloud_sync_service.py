@@ -7,9 +7,11 @@ without overwriting a shop's private selling prices or stock balances.
 
 import json
 import logging
+import time
 import urllib.request
 import urllib.error
 from decimal import Decimal
+from pathlib import Path
 from typing import Dict, Any, Optional, Tuple, List
 from sqlalchemy.orm import Session
 
@@ -46,9 +48,14 @@ def fetch_cloud_catalog(
     Downloads the master catalog JSON from the cloud repository.
     Raises CloudSyncError if network connection fails.
     """
+    clean_url = f"{url}?_cb={int(time.time())}" if "?" not in url else url
     req = urllib.request.Request(
-        url,
-        headers={"User-Agent": "AJBillingSoftware-POS/1.0 (Windows; CloudSync)"},
+        clean_url,
+        headers={
+            "User-Agent": "AJBillingSoftware-POS/1.0 (Windows; CloudSync)",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+        },
     )
 
     try:
@@ -59,6 +66,15 @@ def fetch_cloud_catalog(
             return json.loads(raw_data)
     except urllib.error.URLError as err:
         logger.error(f"Failed to reach cloud catalog at {url}: {err}")
+        # Local fallback if master_catalog.json exists on disk
+        local_path = Path("catalog") / "master_catalog.json"
+        if local_path.exists():
+            try:
+                with open(local_path, "r", encoding="utf-8") as f:
+                    logger.info("Loaded master catalog from local repository fallback.")
+                    return json.load(f)
+            except Exception:
+                pass
         raise CloudSyncError(
             f"Unable to connect to the cloud server. Please check your internet connection.\n\nDetails: {err.reason}"
         )
@@ -183,29 +199,42 @@ def fetch_shop_pricing(
 ) -> Optional[Dict[str, Any]]:
     """
     Downloads shop-specific pricing overrides from GitHub raw CDN.
-    Returns None if file doesn't exist (HTTP 404) or network is unavailable.
+    Uses cache-busting and falls back to local file if available.
     """
     clean_id = (shop_id or "SHOP_01").strip().upper()
-    url = base_url_template.format(shop_id=clean_id)
+    url = f"{base_url_template.format(shop_id=clean_id)}?_cb={int(time.time())}"
     req = urllib.request.Request(
         url,
-        headers={"User-Agent": "AJBillingSoftware-POS/1.0 (Windows; ShopPricingSync)"},
+        headers={
+            "User-Agent": "AJBillingSoftware-POS/1.0 (Windows; ShopPricingSync)",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+        },
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as response:
             if response.status == 200:
                 raw_bytes = response.read().decode("utf-8")
                 return json.loads(raw_bytes)
-            return None
     except urllib.error.HTTPError as err:
         if err.code == 404:
             logger.info(f"No custom pricing file found for shop {clean_id} (HTTP 404).")
-            return None
-        logger.warning(f"HTTP error fetching shop pricing for {clean_id}: {err}")
-        return None
+        else:
+            logger.warning(f"HTTP error fetching shop pricing for {clean_id}: {err}")
     except Exception as exc:
         logger.warning(f"Could not connect to fetch shop pricing for {clean_id}: {exc}")
-        return None
+
+    # Fallback to local catalog file if present on disk
+    local_path = Path("catalog") / "shops" / f"{clean_id}_pricing.json"
+    if local_path.exists():
+        try:
+            with open(local_path, "r", encoding="utf-8") as f:
+                logger.info(f"Loaded shop pricing from local fallback file: {local_path}")
+                return json.load(f)
+        except Exception as e:
+            logger.warning(f"Failed to read local fallback {local_path}: {e}")
+
+    return None
 
 
 def sync_shop_pricing_from_cloud(
@@ -216,46 +245,95 @@ def sync_shop_pricing_from_cloud(
     base_url_template: str = DEFAULT_SHOP_PRICING_URL_TEMPLATE,
 ) -> Dict[str, Any]:
     """
-    Applies developer-managed custom pricing for a specific shop.
-    Updates selling_price, purchase_cost, and mrp.
-    Leaves stock quantities untouched!
+    Applies developer-managed custom pricing and shop-specific products for a specific shop.
+    - If product exists: updates selling_price, purchase_cost, mrp, and name.
+    - If product is brand new: automatically creates the product in the local store catalog!
+    Leaves existing stock balances untouched.
     """
     clean_id = (shop_id or "SHOP_01").strip().upper()
     if pricing_data is None:
         pricing_data = fetch_shop_pricing(shop_id=clean_id, base_url_template=base_url_template)
 
     if not pricing_data:
-        return {"status": "skipped", "updated": 0, "shop_id": clean_id, "reason": "No pricing file"}
+        return {"status": "skipped", "updated": 0, "created": 0, "shop_id": clean_id, "reason": "No pricing file"}
 
     price_updates = pricing_data.get("price_updates", [])
     updated_count = 0
+    created_count = 0
 
-    with db_manager.session() as session:
-        for item in price_updates:
-            barcode = str(item.get("barcode", "")).strip()
-            sku = str(item.get("sku", "")).strip()
-            if not barcode and not sku:
-                continue
+    prod_service = ProductService(db_manager)
+    uoms_list = prod_service.list_uoms()
+    uom_by_code = {u["code"]: u["id"] for u in uoms_list}
+    taxes_list = prod_service.list_tax_profiles()
+    tax_by_name = {t["name"]: t["id"] for t in taxes_list}
+    default_unit_id = uom_by_code.get("PCS", next(iter(uom_by_code.values()), 1) if uom_by_code else 1)
+    default_tax_id = taxes_list[0]["id"] if taxes_list else 1
 
-            query = session.query(Product)
+    for item in price_updates:
+        barcode = str(item.get("barcode", "")).strip() if item.get("barcode") else None
+        sku = str(item.get("sku", "")).strip() if item.get("sku") else None
+        if not barcode and not sku:
+            continue
+
+        item_name = item.get("name") or sku or f"Product {barcode}"
+        selling_price = Decimal(str(item.get("selling_price", 0.0)))
+        purchase_cost = Decimal(str(item.get("purchase_cost", 0.0)))
+        mrp_val = Decimal(str(item.get("mrp", selling_price)))
+
+        with db_manager.session() as session:
             prod = None
             if barcode:
-                prod = query.filter_by(barcode=barcode).first()
+                prod = session.query(Product).filter_by(barcode=barcode).first()
             if not prod and sku:
-                prod = query.filter_by(sku=sku).first()
+                prod = session.query(Product).filter_by(sku=sku).first()
 
             if prod:
                 if "selling_price" in item:
-                    prod.selling_price = Decimal(str(item["selling_price"]))
+                    prod.selling_price = selling_price
                 if "purchase_cost" in item:
-                    prod.purchase_cost = Decimal(str(item["purchase_cost"]))
+                    prod.purchase_cost = purchase_cost
                 if "mrp" in item:
-                    prod.mrp = Decimal(str(item["mrp"]))
+                    prod.mrp = mrp_val
+                if "name" in item and item["name"]:
+                    prod.name = item["name"].strip()
                 updated_count += 1
+                continue
+
+        # If product does NOT exist in store yet, create it as a new product!
+        try:
+            unit_id = uom_by_code.get(item.get("unit", "PCS"), default_unit_id)
+            tax_id = tax_by_name.get(item.get("tax_name", ""), default_tax_id)
+
+            cat_id = None
+            if item.get("category"):
+                cat_id = prod_service.get_or_create_category(current_session, item["category"])
+            brand_id = None
+            if item.get("brand"):
+                brand_id = prod_service.get_or_create_brand(current_session, item["brand"])
+
+            prod_service.create_product(
+                current_session=current_session,
+                name=item_name,
+                sku=sku or f"SKU-{barcode}",
+                barcode=barcode,
+                unit_id=unit_id,
+                tax_profile_id=tax_id,
+                selling_price=selling_price,
+                purchase_cost=purchase_cost,
+                mrp=mrp_val,
+                category_id=cat_id,
+                brand_id=brand_id,
+                initial_stock=Decimal(str(item.get("initial_stock", "0.000"))),
+            )
+            created_count += 1
+            logger.info(f"Created new product from shop pricing for {clean_id}: '{item_name}' (Barcode: {barcode}, Price: {selling_price})")
+        except Exception as err:
+            logger.warning(f"Could not create product '{item_name}' from shop pricing: {err}")
 
     return {
         "status": "success",
         "updated": updated_count,
+        "created": created_count,
         "shop_id": clean_id,
         "version": pricing_data.get("version", "1.0.0"),
     }
@@ -269,7 +347,7 @@ def run_auto_sync_on_startup(
     """
     Executed silently in background on application startup.
     1. Downloads any brand-new grocery items added by developer to master catalog
-    2. Downloads and updates developer-managed retail prices for this specific shop
+    2. Downloads and updates developer-managed retail prices and custom products for this specific shop
     Never throws uncaught exceptions or blocks offline store operations.
     """
     clean_id = (shop_id or "SHOP_01").strip().upper()
@@ -279,6 +357,7 @@ def run_auto_sync_on_startup(
         "new_products": 0,
         "master_refreshed": 0,
         "shop_prices_updated": 0,
+        "shop_products_created": 0,
         "message": "",
     }
 
@@ -294,7 +373,7 @@ def run_auto_sync_on_startup(
     except Exception as exc:
         logger.info(f"Startup master catalog sync skipped: {exc}")
 
-    # 2. Sync Shop-Specific Pricing
+    # 2. Sync Shop-Specific Pricing & Custom Products
     try:
         shop_res = sync_shop_pricing_from_cloud(
             db_manager=db_manager,
@@ -302,15 +381,18 @@ def run_auto_sync_on_startup(
             shop_id=clean_id,
         )
         result["shop_prices_updated"] = shop_res.get("updated", 0)
+        result["shop_products_created"] = shop_res.get("created", 0)
         result["success"] = True
     except Exception as exc:
         logger.info(f"Startup shop pricing sync skipped: {exc}")
 
     parts = []
     if result["new_products"] > 0:
-        parts.append(f"{result['new_products']} new products added")
+        parts.append(f"{result['new_products']} master products added")
+    if result["shop_products_created"] > 0:
+        parts.append(f"{result['shop_products_created']} custom products added for {clean_id}")
     if result["shop_prices_updated"] > 0:
-        parts.append(f"{result['shop_prices_updated']} prices updated by Developer")
+        parts.append(f"{result['shop_prices_updated']} prices updated for {clean_id}")
 
     if parts:
         result["message"] = f"Cloud Sync ({clean_id}): " + ", ".join(parts)

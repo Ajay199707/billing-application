@@ -315,7 +315,7 @@ class MainWindow(QMainWindow):
             if future.done():
                 try:
                     res = future.result()
-                    if res.get("success") and (res.get("new_products", 0) > 0 or res.get("shop_prices_updated", 0) > 0):
+                    if res.get("success") and (res.get("new_products", 0) > 0 or res.get("shop_prices_updated", 0) > 0 or res.get("shop_products_created", 0) > 0):
                         msg = f"☁️ {res.get('message', 'Cloud Sync Complete')}"
                         self.statusBar().showMessage(msg, 12000)
                         curr_widget = self.stack.currentWidget()

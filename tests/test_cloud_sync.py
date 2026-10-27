@@ -184,3 +184,47 @@ def test_shop_specific_pricing_update(db_manager, test_shop_and_admin):
         p2 = session.query(Product).filter_by(barcode="8906007281014").first()
         assert p2.selling_price == Decimal("139.00")
         assert p2.purchase_cost == Decimal("115.00")
+
+
+def test_shop_specific_creates_new_custom_product(db_manager, test_shop_and_admin):
+    """Verify that new products defined in shop pricing file are created in local database."""
+    from src.services.auth_service import AuthService
+    from src.services.cloud_sync_service import sync_shop_pricing_from_cloud
+    auth = AuthService(db_manager)
+    admin_session = auth.authenticate("admin", "AdminPassword123!")
+
+    custom_data = {
+        "shop_id": "SHOP_01",
+        "version": "1.0.1",
+        "price_updates": [
+            {
+                "name": "aaa",
+                "sku": "AAA-111",
+                "barcode": "1006",
+                "selling_price": 100.0,
+                "purchase_cost": 98.0,
+                "mrp": 95.0,
+            }
+        ],
+    }
+
+    res = sync_shop_pricing_from_cloud(
+        db_manager=db_manager,
+        current_session=admin_session,
+        shop_id="SHOP_01",
+        pricing_data=custom_data,
+    )
+
+    assert res["status"] == "success"
+    assert res["created"] == 1
+    assert res["updated"] == 0
+
+    with db_manager.session() as session:
+        from src.models import Product
+        p = session.query(Product).filter_by(barcode="1006").first()
+        assert p is not None
+        assert p.name == "aaa"
+        assert p.sku == "AAA-111"
+        assert p.selling_price == Decimal("100.00")
+        assert p.purchase_cost == Decimal("98.00")
+        assert p.mrp == Decimal("95.00")

@@ -289,21 +289,49 @@ class ProductsView(QWidget):
         self.cloud_sync_btn.setEnabled(False)
         self.cloud_sync_btn.setText("☁️ Syncing...")
         try:
-            from src.services.cloud_sync_service import sync_catalog_from_cloud, CloudSyncError
+            from src.services.cloud_sync_service import (
+                sync_catalog_from_cloud,
+                sync_shop_pricing_from_cloud,
+                CloudSyncError,
+            )
+            from src.services.settings_service import SettingsService
+
+            # 1. Sync Master Catalog
             res = sync_catalog_from_cloud(
                 db_manager=self.product_service.db,
                 current_session=self.current_session,
                 preserve_shop_prices=True,
             )
+
+            # 2. Sync Shop-Specific Custom Catalog & Pricing (e.g. SHOP_01)
+            sett_svc = SettingsService(self.product_service.db)
+            shop_id = "SHOP_01"
+            try:
+                shop_id = sett_svc.get_cloud_shop_id()
+            except Exception:
+                pass
+
+            shop_res = sync_shop_pricing_from_cloud(
+                db_manager=self.product_service.db,
+                current_session=self.current_session,
+                shop_id=shop_id,
+            )
+
+            msg_parts = [
+                f"Cloud Master Catalog & Shop '{shop_id}' synchronized!\n",
+                f"• Master Catalog: {res.get('created', 0)} new products added, {res.get('updated', 0)} refreshed",
+            ]
+            if shop_res.get('created', 0) > 0:
+                msg_parts.append(f"• Shop Specific: {shop_res.get('created', 0)} new custom products added")
+            if shop_res.get('updated', 0) > 0:
+                msg_parts.append(f"• Shop Pricing: {shop_res.get('updated', 0)} product prices updated")
+
+            msg_parts.append("\nYour store inventory counts were safely preserved.")
+
             QMessageBox.information(
                 self,
                 "Cloud Sync Complete",
-                f"Cloud Master Catalog synchronized successfully!\n\n"
-                f"• Catalog Version: {res.get('version', '1.0.0')}\n"
-                f"• {res.get('created', 0)} new products added\n"
-                f"• {res.get('updated', 0)} existing products updated\n"
-                f"• Total catalog items: {res.get('total_cloud', 0)}\n\n"
-                f"Your store's local selling prices and inventory were safely preserved.",
+                "\n".join(msg_parts),
             )
             self._refresh_category_filter()
             self.refresh_products()

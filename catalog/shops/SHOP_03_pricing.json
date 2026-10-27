@@ -1,0 +1,31 @@
+{
+  "shop_id": "SHOP_03",
+  "client_name": "Shop 03 Retailer",
+  "version": "1.0.0",
+  "last_updated": "2026-10-27",
+  "description": "Developer-Managed Pricing & Catalog for Client Shop 03",
+  "price_updates": [
+    {
+      "name": "Bru Instant Coffee 100g Pouch",
+      "sku": "BRU-INST-100G",
+      "barcode": "8901030011010",
+      "selling_price": 195.0,
+      "purchase_cost": 168.0,
+      "mrp": 210.0,
+      "unit": "PCS",
+      "category": "Beverages",
+      "tax_name": "GST 18%"
+    },
+    {
+      "name": "Red Label Tea 500g",
+      "sku": "RED-TEA-500G",
+      "barcode": "8901030021019",
+      "selling_price": 285.0,
+      "purchase_cost": 245.0,
+      "mrp": 310.0,
+      "unit": "PCS",
+      "category": "Beverages",
+      "tax_name": "GST 5%"
+    }
+  ]
+}

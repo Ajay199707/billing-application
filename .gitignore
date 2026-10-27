@@ -73,3 +73,6 @@ venv.bak/
 *~
 .DS_Store
 Thumbs.db
+
+# Scratch scripts
+scratch/

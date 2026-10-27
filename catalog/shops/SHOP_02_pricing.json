@@ -1,0 +1,31 @@
+{
+  "shop_id": "SHOP_02",
+  "client_name": "Shop 02 Retailer",
+  "version": "1.0.0",
+  "last_updated": "2026-10-27",
+  "description": "Developer-Managed Pricing & Catalog for Client Shop 02",
+  "price_updates": [
+    {
+      "name": "Tata Salt 1kg",
+      "sku": "TATA-SALT-1KG",
+      "barcode": "8904004400018",
+      "selling_price": 28.0,
+      "purchase_cost": 22.0,
+      "mrp": 30.0,
+      "unit": "PCS",
+      "category": "Groceries",
+      "tax_name": "GST 0%"
+    },
+    {
+      "name": "Aashirvaad Superior MP Atta 5kg",
+      "sku": "AASH-ATTA-5KG",
+      "barcode": "8901030381014",
+      "selling_price": 260.0,
+      "purchase_cost": 225.0,
+      "mrp": 275.0,
+      "unit": "PCS",
+      "category": "Groceries",
+      "tax_name": "GST 5%"
+    }
+  ]
+}

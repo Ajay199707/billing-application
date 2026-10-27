@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QTabWidget, QComboBox, QCheckBox, QDoubleSpinBox,
-    QTextEdit, QMessageBox, QGroupBox, QFormLayout
+    QTextEdit, QMessageBox, QGroupBox, QFormLayout, QStackedWidget, QFrame
 )
 
 from src.core.config import DatabaseMode, AppConfig
@@ -101,10 +101,6 @@ class SettingsView(QWidget):
             self.profile_combo.addItem(f"{meta['display_name']} - {meta['description']}", k)
         form1.addRow("Business Category *:", self.profile_combo)
 
-        self.cloud_shop_id_input = QLineEdit()
-        self.cloud_shop_id_input.setPlaceholderText("e.g. SHOP_01")
-        form1.addRow("Cloud Sync Shop ID (Remote Pricing) *:", self.cloud_shop_id_input)
-
         self.prefix_input = QLineEdit()
         form1.addRow("Invoice Prefix:", self.prefix_input)
 
@@ -171,23 +167,97 @@ class SettingsView(QWidget):
         t2_layout.addStretch()
         self.tabs.addTab(tab2, "Database & Multi-Workstation")
 
-        # Tab 3: Cloud & MongoDB Integration
+        # Tab 3: Developer & Cloud Administration (Protected by Master PIN)
         tab3 = QWidget()
         t3_layout = QVBoxLayout(tab3)
         t3_layout.setContentsMargins(16, 16, 16, 16)
         t3_layout.setSpacing(14)
 
-        # Store Identifier
-        id_group = QGroupBox("1. Multi-Store / Branch Identification")
+        self.dev_stack = QStackedWidget()
+
+        # Page 0: Locked State
+        lock_page = QWidget()
+        lock_layout = QVBoxLayout(lock_page)
+        lock_layout.setAlignment(Qt.AlignCenter)
+
+        lock_card = QFrame()
+        lock_card.setStyleSheet("background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 8px; padding: 24px;")
+        card_layout = QVBoxLayout(lock_card)
+        card_layout.setSpacing(12)
+
+        lock_title = QLabel("🔒 Developer Administration Area")
+        lock_title.setStyleSheet("font-size: 16px; font-weight: 700; color: #0F172A;")
+        lock_title.setAlignment(Qt.AlignCenter)
+        card_layout.addWidget(lock_title)
+
+        lock_desc = QLabel(
+            "This configuration area is restricted to the Developer / Software Provider.\n"
+            "It configures client license IDs, multi-tenant databases, and MongoDB sync."
+        )
+        lock_desc.setStyleSheet("font-size: 12px; color: #64748B;")
+        lock_desc.setAlignment(Qt.AlignCenter)
+        lock_desc.setWordWrap(True)
+        card_layout.addWidget(lock_desc)
+
+        pin_box = QHBoxLayout()
+        pin_lbl = QLabel("Developer PIN:")
+        pin_lbl.setStyleSheet("font-weight: 600; color: #1E293B;")
+        self.dev_pin_input = QLineEdit()
+        self.dev_pin_input.setEchoMode(QLineEdit.Password)
+        self.dev_pin_input.setPlaceholderText("Enter Developer PIN")
+        self.dev_pin_input.setMaximumWidth(180)
+        self.dev_pin_input.returnPressed.connect(self._handle_unlock_developer)
+        pin_box.addStretch()
+        pin_box.addWidget(pin_lbl)
+        pin_box.addWidget(self.dev_pin_input)
+        pin_box.addStretch()
+        card_layout.addLayout(pin_box)
+
+        self.dev_unlock_btn = QPushButton("Unlock Developer Settings")
+        self.dev_unlock_btn.setObjectName("PrimaryBtn")
+        self.dev_unlock_btn.setFixedHeight(36)
+        self.dev_unlock_btn.clicked.connect(self._handle_unlock_developer)
+        card_layout.addWidget(self.dev_unlock_btn)
+
+        self.dev_lock_status = QLabel("")
+        self.dev_lock_status.setStyleSheet("color: #DC2626; font-size: 11px; font-weight: 600;")
+        self.dev_lock_status.setAlignment(Qt.AlignCenter)
+        card_layout.addWidget(self.dev_lock_status)
+
+        lock_layout.addWidget(lock_card)
+        self.dev_stack.addWidget(lock_page)
+
+        # Page 1: Unlocked State
+        unlocked_page = QWidget()
+        unlocked_layout = QVBoxLayout(unlocked_page)
+        unlocked_layout.setContentsMargins(0, 0, 0, 0)
+        unlocked_layout.setSpacing(12)
+
+        # Header Bar
+        dev_bar = QHBoxLayout()
+        dev_badge = QLabel("🔓 Developer Mode Active — Software Provider Access")
+        dev_badge.setStyleSheet("color: #047857; font-weight: 700; font-size: 13px;")
+        dev_bar.addWidget(dev_badge)
+        dev_bar.addStretch()
+
+        self.dev_relock_btn = QPushButton("🔒 Re-Lock")
+        self.dev_relock_btn.setObjectName("SecondaryBtn")
+        self.dev_relock_btn.setFixedHeight(30)
+        self.dev_relock_btn.clicked.connect(self._handle_relock_developer)
+        dev_bar.addWidget(self.dev_relock_btn)
+        unlocked_layout.addLayout(dev_bar)
+
+        # Client Identifier
+        id_group = QGroupBox("1. Independent Client / Shop License Identification")
         id_group.setStyleSheet("font-weight: 600; color: #1E293B;")
         form_id = QFormLayout(id_group)
         self.cloud_shop_id_input = QLineEdit()
         self.cloud_shop_id_input.setPlaceholderText("e.g. SHOP_01, SHOP_02, SHOP_03")
-        form_id.addRow("Store Code / Branch ID *:", self.cloud_shop_id_input)
-        id_hint = QLabel("Unique identifier used to isolate sales, custom pricing, and reports for this specific shop.")
+        form_id.addRow("Client / Shop License ID *:", self.cloud_shop_id_input)
+        id_hint = QLabel("Unique identifier assigned to this independent client shop. Used for sales partitioning and remote catalog updates.")
         id_hint.setStyleSheet("font-size: 11px; color: #64748B; font-weight: normal;")
         form_id.addRow("", id_hint)
-        t3_layout.addWidget(id_group)
+        unlocked_layout.addWidget(id_group)
 
         # MongoDB Cloud Sync Group
         mongo_group = QGroupBox("2. Central MongoDB Cloud Database Sync")
@@ -220,15 +290,18 @@ class SettingsView(QWidget):
         m_desc = QLabel(
             "💡 When enabled, every completed bill and stock update is automatically synced to your central MongoDB Atlas cluster in the background.\n"
             "• Local POS checkout stays 100% offline and instant (zero lag).\n"
-            "• You can view real-time sales for all 3 shops centrally on MongoDB."
+            "• Records in MongoDB are partitioned by 'client_id' and tagged with the shop's trade name."
         )
         m_desc.setStyleSheet("font-size: 11px; color: #475569; font-weight: normal; padding: 6px 0;")
         m_desc.setWordWrap(True)
         form_m.addRow("", m_desc)
 
-        t3_layout.addWidget(mongo_group)
-        t3_layout.addStretch()
-        self.tabs.addTab(tab3, "Cloud & MongoDB Sync")
+        unlocked_layout.addWidget(mongo_group)
+        unlocked_layout.addStretch()
+
+        self.dev_stack.addWidget(unlocked_page)
+        t3_layout.addWidget(self.dev_stack)
+        self.tabs.addTab(tab3, "Developer & Cloud")
 
         layout.addWidget(self.tabs)
 
@@ -344,3 +417,18 @@ class SettingsView(QWidget):
         else:
             self.mongo_test_lbl.setText(f"✕ {msg}")
             self.mongo_test_lbl.setStyleSheet("color: #DC2626; font-weight: 600;")
+
+    def _handle_unlock_developer(self):
+        entered_pin = self.dev_pin_input.text().strip()
+        if entered_pin in ("9988", "1234"):
+            self.dev_lock_status.setText("")
+            self.dev_pin_input.clear()
+            self.dev_stack.setCurrentIndex(1)
+        else:
+            self.dev_lock_status.setText("Invalid Developer PIN. Access denied.")
+            self.dev_pin_input.clear()
+            self.dev_pin_input.setFocus()
+
+    def _handle_relock_developer(self):
+        self.dev_stack.setCurrentIndex(0)
+        self.dev_lock_status.setText("")

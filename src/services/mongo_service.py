@@ -113,8 +113,22 @@ class MongoSyncService:
         clean_shop_id = (shop_id or "SHOP_01").strip().upper()
         inv_num = sale_dict["invoice_number"]
 
+        # Retrieve shop name for centralized multi-client identification
+        shop_name = sale_dict.get("shop_name", "")
+        if not shop_name:
+            try:
+                from src.models import Shop
+                with self.db.session() as s:
+                    s_row = s.query(Shop).first()
+                    if s_row:
+                        shop_name = s_row.name
+            except Exception:
+                shop_name = f"Shop {clean_shop_id}"
+
         document = {
+            "client_id": clean_shop_id,
             "shop_id": clean_shop_id,
+            "shop_name": shop_name,
             "invoice_number": inv_num,
             "sale_date": sale_dict.get("sale_date"),
             "customer_name": sale_dict.get("customer_name", "Walk-in Customer"),
@@ -138,7 +152,7 @@ class MongoSyncService:
             db = client[cfg["database_name"]]
             collection = db["sales"]
             collection.update_one(
-                {"shop_id": clean_shop_id, "invoice_number": inv_num},
+                {"client_id": clean_shop_id, "invoice_number": inv_num},
                 {"$set": document},
                 upsert=True,
             )

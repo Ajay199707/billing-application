@@ -68,8 +68,8 @@ class OnboardingDialog(QDialog):
 
         self.shop_id_input = QLineEdit()
         self.shop_id_input.setText("SHOP_01")
-        self.shop_id_input.setPlaceholderText("e.g. SHOP_01, SHOP_02, SHOP_03")
-        form1.addRow("Store / Branch Code *:", self.shop_id_input)
+        self.shop_id_input.setPlaceholderText("e.g. SHOP_01, SHOP_02, SHOP_03 (Assigned by Developer)")
+        form1.addRow("Client / Shop License ID *:", self.shop_id_input)
 
         self.shop_name_input = QLineEdit()
         self.shop_name_input.setPlaceholderText("e.g. Sri Murugan Supermarket")

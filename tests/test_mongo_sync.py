@@ -69,7 +69,8 @@ def test_mongo_sale_sync_mock(db_manager):
         filter_arg, update_arg = mock_collection.update_one.call_args[0]
         kwargs = mock_collection.update_one.call_args[1]
 
-        assert filter_arg == {"shop_id": "SHOP_02", "invoice_number": "INV-2026-0001"}
+        assert filter_arg == {"client_id": "SHOP_02", "invoice_number": "INV-2026-0001"}
+        assert update_arg["$set"]["client_id"] == "SHOP_02"
         assert update_arg["$set"]["shop_id"] == "SHOP_02"
         assert update_arg["$set"]["grand_total"] == 120.0
         assert kwargs.get("upsert") is True

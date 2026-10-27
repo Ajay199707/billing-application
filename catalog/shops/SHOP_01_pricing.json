@@ -27,6 +27,16 @@
       "selling_price": 58.0,
       "purchase_cost": 48.0,
       "mrp": 63.0
+    },
+        {
+      "name": "aaa",
+      "sku": "AAA-111",
+      "barcode": "1006",
+      "selling_price": 100,
+      "purchase_cost": 98.0,
+      "mrp": 95.0
     }
+    
+    
   ]
 }

@@ -28,9 +28,9 @@ class ProductsView(QWidget):
     def _init_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 20, 24, 20)
-        layout.setSpacing(14)
+        layout.setSpacing(12)
 
-        # Header Title and Action Buttons
+        # ---------------- Row 1: Header Title and Primary Actions ----------------
         top_bar = QHBoxLayout()
         title_box = QVBoxLayout()
         title = QLabel("Product Catalogue & Stock")
@@ -44,51 +44,117 @@ class ProductsView(QWidget):
 
         top_bar.addStretch()
 
-        self.cat_brand_btn = QPushButton("📁 Categories & Brands")
-        self.cat_brand_btn.setObjectName("SecondaryBtn")
-        self.cat_brand_btn.clicked.connect(self._handle_manage_categories_brands)
-        top_bar.addWidget(self.cat_brand_btn)
-
-        self.bulk_entry_btn = QPushButton("📑 Bulk Entry Grid")
-        self.bulk_entry_btn.setObjectName("SecondaryBtn")
-        self.bulk_entry_btn.clicked.connect(self._handle_bulk_entry)
-        top_bar.addWidget(self.bulk_entry_btn)
-
-        self.print_barcodes_btn = QPushButton("🏷️ Barcode Labels")
-        self.print_barcodes_btn.setObjectName("SecondaryBtn")
-        self.print_barcodes_btn.clicked.connect(self._handle_print_barcode_labels)
-        top_bar.addWidget(self.print_barcodes_btn)
-
-        self.import_btn = QPushButton("Import CSV")
-        self.import_btn.setObjectName("SecondaryBtn")
-        self.import_btn.clicked.connect(self._handle_import_csv)
-        top_bar.addWidget(self.import_btn)
-
-        self.export_btn = QPushButton("Export to Excel")
-        self.export_btn.setObjectName("SecondaryBtn")
-        self.export_btn.clicked.connect(self._handle_export_excel)
-        top_bar.addWidget(self.export_btn)
-
         self.starter_catalog_btn = QPushButton("🛒 Starter Catalog")
-        self.starter_catalog_btn.setObjectName("SecondaryBtn")
-        self.starter_catalog_btn.setStyleSheet("font-weight: 600; color: #064E3B; background: #ECFDF5; border: 1px solid #10B981;")
+        self.starter_catalog_btn.setFixedHeight(36)
+        self.starter_catalog_btn.setStyleSheet("""
+            QPushButton {
+                font-weight: 700;
+                font-size: 12px;
+                color: #065F46;
+                background-color: #ECFDF5;
+                border: 1.5px solid #10B981;
+                border-radius: 6px;
+                padding: 6px 14px;
+            }
+            QPushButton:hover {
+                background-color: #D1FAE5;
+            }
+        """)
         self.starter_catalog_btn.clicked.connect(self._handle_load_starter_catalog)
         top_bar.addWidget(self.starter_catalog_btn)
 
         self.cloud_sync_btn = QPushButton("☁️ Sync Cloud Catalog")
-        self.cloud_sync_btn.setObjectName("SecondaryBtn")
-        self.cloud_sync_btn.setStyleSheet("font-weight: 600; color: #1D4ED8; background: #EFF6FF; border: 1px solid #3B82F6;")
+        self.cloud_sync_btn.setFixedHeight(36)
+        self.cloud_sync_btn.setStyleSheet("""
+            QPushButton {
+                font-weight: 700;
+                font-size: 12px;
+                color: #1D4ED8;
+                background-color: #EFF6FF;
+                border: 1.5px solid #3B82F6;
+                border-radius: 6px;
+                padding: 6px 14px;
+            }
+            QPushButton:hover {
+                background-color: #DBEAFE;
+            }
+        """)
         self.cloud_sync_btn.clicked.connect(self._handle_cloud_sync)
         top_bar.addWidget(self.cloud_sync_btn)
 
         self.add_btn = QPushButton("+ Add New Product")
         self.add_btn.setObjectName("PrimaryBtn")
+        self.add_btn.setFixedHeight(36)
+        self.add_btn.setStyleSheet("""
+            QPushButton#PrimaryBtn {
+                background-color: #059669;
+                color: #FFFFFF;
+                font-weight: 700;
+                font-size: 13px;
+                border: none;
+                border-radius: 6px;
+                padding: 6px 18px;
+            }
+            QPushButton#PrimaryBtn:hover {
+                background-color: #047857;
+            }
+        """)
         self.add_btn.clicked.connect(self._handle_add_product)
         top_bar.addWidget(self.add_btn)
 
         layout.addLayout(top_bar)
 
-        # Filter & Search Controls Bar
+        # ---------------- Row 2: Secondary Tool Actions Bar ----------------
+        tools_bar = QHBoxLayout()
+        tools_bar.setSpacing(10)
+
+        tool_btn_style = """
+            QPushButton {
+                background-color: #F8FAFC;
+                color: #1E293B;
+                font-weight: 700;
+                font-size: 12px;
+                border: 1.5px solid #CBD5E1;
+                border-radius: 6px;
+                padding: 6px 14px;
+                min-height: 28px;
+            }
+            QPushButton:hover {
+                background-color: #F1F5F9;
+                border-color: #059669;
+                color: #064E3B;
+            }
+        """
+
+        self.cat_brand_btn = QPushButton("📁 Categories && Brands")
+        self.cat_brand_btn.setStyleSheet(tool_btn_style)
+        self.cat_brand_btn.clicked.connect(self._handle_manage_categories_brands)
+        tools_bar.addWidget(self.cat_brand_btn)
+
+        self.bulk_entry_btn = QPushButton("📑 Bulk Entry Grid")
+        self.bulk_entry_btn.setStyleSheet(tool_btn_style)
+        self.bulk_entry_btn.clicked.connect(self._handle_bulk_entry)
+        tools_bar.addWidget(self.bulk_entry_btn)
+
+        self.print_barcodes_btn = QPushButton("🏷️ Barcode Labels")
+        self.print_barcodes_btn.setStyleSheet(tool_btn_style)
+        self.print_barcodes_btn.clicked.connect(self._handle_print_barcode_labels)
+        tools_bar.addWidget(self.print_barcodes_btn)
+
+        self.import_btn = QPushButton("📥 Import CSV")
+        self.import_btn.setStyleSheet(tool_btn_style)
+        self.import_btn.clicked.connect(self._handle_import_csv)
+        tools_bar.addWidget(self.import_btn)
+
+        self.export_btn = QPushButton("📊 Export to Excel")
+        self.export_btn.setStyleSheet(tool_btn_style)
+        self.export_btn.clicked.connect(self._handle_export_excel)
+        tools_bar.addWidget(self.export_btn)
+
+        tools_bar.addStretch()
+        layout.addLayout(tools_bar)
+
+        # ---------------- Row 3: Filter & Search Controls Bar ----------------
         filter_bar = QHBoxLayout()
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search by product name, SKU, or barcode...")
@@ -102,9 +168,15 @@ class ProductsView(QWidget):
         self.category_filter.currentIndexChanged.connect(self.refresh_products)
         filter_bar.addWidget(self.category_filter, 2)
 
+        self.refresh_btn = QPushButton("🔄 Refresh")
+        self.refresh_btn.setFixedHeight(36)
+        self.refresh_btn.setStyleSheet(tool_btn_style)
+        self.refresh_btn.clicked.connect(self.refresh_products)
+        filter_bar.addWidget(self.refresh_btn)
+
         layout.addLayout(filter_bar)
 
-        # Main Products Table
+        # ---------------- Main Products Table ----------------
         self.table = QTableWidget()
         self.table.setColumnCount(9)
         self.table.setHorizontalHeaderLabels([

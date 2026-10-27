@@ -176,18 +176,19 @@ QPushButton#DangerBtn:hover {
 
 /* Secondary Buttons */
 QPushButton#SecondaryBtn {
-    background-color: #FFFFFF;
-    color: #065F46;
-    font-weight: 600;
-    border: 1px solid #A7F3D0;
+    background-color: #F8FAFC;
+    color: #0F172A;
+    font-weight: 700;
+    border: 1.5px solid #CBD5E1;
     border-radius: 6px;
     padding: 8px 16px;
     font-size: 13px;
 }
 
 QPushButton#SecondaryBtn:hover {
-    background-color: #ECFDF5;
+    background-color: #F1F5F9;
     border-color: #059669;
+    color: #064E3B;
 }
 
 /* Compact Table Action Buttons */
@@ -247,25 +248,32 @@ QPushButton#CheckoutBtn:pressed {
 
 /* Tabs */
 QTabWidget::pane {
-    border: 1px solid #D1FAE5;
+    border: 1.5px solid #CBD5E1;
     background: #FFFFFF;
     border-radius: 6px;
 }
 
 QTabBar::tab {
-    background: #ECFDF5;
-    color: #065F46;
-    padding: 8px 16px;
-    margin-right: 2px;
+    background: #F1F5F9;
+    color: #334155;
+    padding: 10px 22px;
+    margin-right: 4px;
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 13px;
+    border: 1px solid #CBD5E1;
+    border-bottom: none;
 }
 
 QTabBar::tab:selected {
     background: #FFFFFF;
     color: #059669;
-    font-weight: 700;
-    border-bottom: 2px solid #059669;
+    font-weight: 800;
+    font-size: 13px;
+    border-top: 3px solid #059669;
+    border-left: 1.5px solid #CBD5E1;
+    border-right: 1.5px solid #CBD5E1;
+    border-bottom: 2px solid #FFFFFF;
 }
 """

@@ -54,8 +54,21 @@ class SettingsView(QWidget):
         top_bar.addStretch()
 
         self.save_btn = QPushButton("💾 Save All Settings")
-        self.save_btn.setObjectName("PrimaryBtn")
-        self.save_btn.setFixedHeight(36)
+        self.save_btn.setFixedHeight(38)
+        self.save_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #059669;
+                color: #FFFFFF;
+                font-weight: 700;
+                font-size: 13px;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 22px;
+            }
+            QPushButton:hover {
+                background-color: #047857;
+            }
+        """)
         self.save_btn.clicked.connect(self._handle_save)
         top_bar.addWidget(self.save_btn)
 
@@ -117,7 +130,7 @@ class SettingsView(QWidget):
 
         t1_layout.addLayout(form1)
         t1_layout.addStretch()
-        self.tabs.addTab(tab1, "Shop & Business Profile")
+        self.tabs.addTab(tab1, "Shop && Business Profile")
 
         # Tab 2: Database Connectivity & Multi-Computer
         tab2 = QWidget()
@@ -153,8 +166,22 @@ class SettingsView(QWidget):
 
         # Connection Test Button and Status Label
         test_box = QHBoxLayout()
-        self.test_btn = QPushButton("Test Database Connection")
-        self.test_btn.setObjectName("SecondaryBtn")
+        self.test_btn = QPushButton("🔌 Test Database Connection")
+        self.test_btn.setFixedHeight(36)
+        self.test_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #0284C7;
+                color: #FFFFFF;
+                font-weight: 700;
+                font-size: 13px;
+                border: none;
+                border-radius: 6px;
+                padding: 6px 18px;
+            }
+            QPushButton:hover {
+                background-color: #0369A1;
+            }
+        """)
         self.test_btn.clicked.connect(self._handle_test_connection)
         test_box.addWidget(self.test_btn)
 
@@ -165,7 +192,7 @@ class SettingsView(QWidget):
         t2_layout.addLayout(test_box)
 
         t2_layout.addStretch()
-        self.tabs.addTab(tab2, "Database & Multi-Workstation")
+        self.tabs.addTab(tab2, "Database && Multi-Workstation")
 
         # Tab 3: Developer & Cloud Administration (Protected by Master PIN)
         tab3 = QWidget()
@@ -213,9 +240,22 @@ class SettingsView(QWidget):
         pin_box.addStretch()
         card_layout.addLayout(pin_box)
 
-        self.dev_unlock_btn = QPushButton("Unlock Developer Settings")
-        self.dev_unlock_btn.setObjectName("PrimaryBtn")
-        self.dev_unlock_btn.setFixedHeight(36)
+        self.dev_unlock_btn = QPushButton("🔓 Unlock Developer Settings")
+        self.dev_unlock_btn.setFixedHeight(38)
+        self.dev_unlock_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #059669;
+                color: #FFFFFF;
+                font-weight: 700;
+                font-size: 13px;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 20px;
+            }
+            QPushButton:hover {
+                background-color: #047857;
+            }
+        """)
         self.dev_unlock_btn.clicked.connect(self._handle_unlock_developer)
         card_layout.addWidget(self.dev_unlock_btn)
 
@@ -240,9 +280,22 @@ class SettingsView(QWidget):
         dev_bar.addWidget(dev_badge)
         dev_bar.addStretch()
 
-        self.dev_relock_btn = QPushButton("🔒 Re-Lock")
-        self.dev_relock_btn.setObjectName("SecondaryBtn")
-        self.dev_relock_btn.setFixedHeight(30)
+        self.dev_relock_btn = QPushButton("🔒 Re-Lock Developer Settings")
+        self.dev_relock_btn.setFixedHeight(34)
+        self.dev_relock_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #0F172A;
+                color: #FFFFFF;
+                font-weight: 700;
+                font-size: 12px;
+                border: 1px solid #020617;
+                border-radius: 6px;
+                padding: 6px 16px;
+            }
+            QPushButton:hover {
+                background-color: #334155;
+            }
+        """)
         self.dev_relock_btn.clicked.connect(self._handle_relock_developer)
         dev_bar.addWidget(self.dev_relock_btn)
         unlocked_layout.addLayout(dev_bar)
@@ -276,8 +329,22 @@ class SettingsView(QWidget):
         form_m.addRow("Database Name:", self.mongo_db_input)
 
         m_test_box = QHBoxLayout()
-        self.mongo_test_btn = QPushButton("Test MongoDB Connection")
-        self.mongo_test_btn.setObjectName("SecondaryBtn")
+        self.mongo_test_btn = QPushButton("⚡ Test MongoDB Connection")
+        self.mongo_test_btn.setFixedHeight(36)
+        self.mongo_test_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #0284C7;
+                color: #FFFFFF;
+                font-weight: 700;
+                font-size: 13px;
+                border: none;
+                border-radius: 6px;
+                padding: 6px 18px;
+            }
+            QPushButton:hover {
+                background-color: #0369A1;
+            }
+        """)
         self.mongo_test_btn.clicked.connect(self._handle_test_mongo)
         m_test_box.addWidget(self.mongo_test_btn)
 
@@ -301,7 +368,7 @@ class SettingsView(QWidget):
 
         self.dev_stack.addWidget(unlocked_page)
         t3_layout.addWidget(self.dev_stack)
-        self.tabs.addTab(tab3, "Developer & Cloud")
+        self.tabs.addTab(tab3, "Developer && Cloud")
 
         layout.addWidget(self.tabs)
 

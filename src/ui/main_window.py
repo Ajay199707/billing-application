@@ -104,10 +104,10 @@ class MainWindow(QMainWindow):
             ("📈  Inventory", 4, "inventory:view"),
             ("📥  Purchases", 5, "purchases:view"),
             ("🧾  Sales History", 6, "pos:reprint"),
-            ("📑  Reports & Tax", 7, "reports:view"),
+            ("📑  Reports && Tax", 7, "reports:view"),
             ("👥  User Management", 8, "users:manage"),
             ("⚙️  Shop Settings", 9, "settings:manage"),
-            ("💾  Backup & Restore", 10, "backup:manage"),
+            ("💾  Backup && Restore", 10, "backup:manage"),
         ]
 
         for label, idx, perm in nav_items:

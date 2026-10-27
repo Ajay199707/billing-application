@@ -19,7 +19,7 @@
       "selling_price": 60.0,
       "purchase_cost": 48.0,
       "mrp": 65.0
-    }
+    },
     {
       "name": "chilli power loose",
       "sku": "Chilli-powder-loose",
@@ -28,6 +28,5 @@
       "purchase_cost": 48.0,
       "mrp": 63.0
     }
-    
   ]
 }

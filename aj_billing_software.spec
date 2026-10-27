@@ -38,6 +38,8 @@ hidden_imports = [
     'barcode.writer',
     'PIL',
     'pydantic',
+    'pymongo',
+    'dns',
 ]
 
 a = Analysis(

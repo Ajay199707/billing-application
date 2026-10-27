@@ -1,8 +1,9 @@
 """
 Cloud Master Catalog Sync Service.
-Connects to the central cloud catalog (hosted on GitHub raw CDN)
-to fetch new products, updated barcodes, and tax classifications
-without overwriting a shop's private selling prices or stock balances.
+Connects to MongoDB Atlas cloud database (and GitHub Raw CDN fallback)
+to fetch new products, updated barcodes, and statutory tax classifications
+as well as shop-specific developer pricing overrides without overwriting
+a shop's private selling prices or stock balances.
 """
 
 import json
@@ -43,11 +44,23 @@ class CloudSyncError(BillingSystemError):
 def fetch_cloud_catalog(
     url: str = DEFAULT_CLOUD_CATALOG_URL,
     timeout: int = 12,
+    db_manager: Optional[DatabaseManager] = None,
 ) -> Dict[str, Any]:
     """
-    Downloads the master catalog JSON from the cloud repository.
-    Raises CloudSyncError if network connection fails.
+    Downloads the master catalog JSON.
+    First checks MongoDB Atlas 'master_catalog' collection if db_manager is provided.
+    Falls back to GitHub Raw CDN, and finally to local repository copy.
     """
+    if db_manager:
+        try:
+            from src.services.mongo_service import MongoSyncService
+            mongo_doc = MongoSyncService(db_manager).get_master_catalog()
+            if mongo_doc and "products" in mongo_doc:
+                logger.info("Loaded master catalog from MongoDB Atlas cloud database.")
+                return mongo_doc
+        except Exception as e:
+            logger.debug(f"MongoDB master catalog check bypassed: {e}")
+
     clean_url = f"{url}?_cb={int(time.time())}" if "?" not in url else url
     req = urllib.request.Request(
         clean_url,
@@ -100,7 +113,7 @@ def sync_catalog_from_cloud(
     - If preserve_shop_prices is True, NEVER overwrites the shopkeeper's custom selling price or stock!
     """
     if cloud_data is None:
-        cloud_data = fetch_cloud_catalog(url=url)
+        cloud_data = fetch_cloud_catalog(url=url, db_manager=db_manager)
 
     products_list = cloud_data.get("products", [])
     if not products_list:
@@ -186,6 +199,7 @@ def sync_catalog_from_cloud(
         "last_updated": cloud_data.get("last_updated", ""),
     }
 
+
 # Template for per-shop custom pricing hosted on GitHub Raw CDN
 DEFAULT_SHOP_PRICING_URL_TEMPLATE = (
     "https://raw.githubusercontent.com/Ajay199707/billing-application/main/catalog/shops/{shop_id}_pricing.json"
@@ -196,12 +210,27 @@ def fetch_shop_pricing(
     shop_id: str,
     base_url_template: str = DEFAULT_SHOP_PRICING_URL_TEMPLATE,
     timeout: int = 10,
+    db_manager: Optional[DatabaseManager] = None,
 ) -> Optional[Dict[str, Any]]:
     """
-    Downloads shop-specific pricing overrides from GitHub raw CDN.
-    Uses cache-busting and falls back to local file if available.
+    Downloads shop-specific pricing overrides.
+    First checks MongoDB Atlas 'client_catalogs' collection if db_manager is provided.
+    Falls back to GitHub raw CDN, and finally to local file if available.
     """
     clean_id = (shop_id or "SHOP_01").strip().upper()
+
+    # 1. MongoDB Atlas Cloud Check
+    if db_manager:
+        try:
+            from src.services.mongo_service import MongoSyncService
+            mongo_doc = MongoSyncService(db_manager).get_shop_catalog(clean_id)
+            if mongo_doc and "price_updates" in mongo_doc:
+                logger.info(f"Loaded pricing overrides for {clean_id} from MongoDB Atlas collection 'client_catalogs'.")
+                return mongo_doc
+        except Exception as exc:
+            logger.debug(f"MongoDB shop pricing fetch bypassed for {clean_id}: {exc}")
+
+    # 2. GitHub Raw CDN Check
     url = f"{base_url_template.format(shop_id=clean_id)}?_cb={int(time.time())}"
     req = urllib.request.Request(
         url,
@@ -224,7 +253,7 @@ def fetch_shop_pricing(
     except Exception as exc:
         logger.warning(f"Could not connect to fetch shop pricing for {clean_id}: {exc}")
 
-    # Fallback to local catalog file if present on disk
+    # 3. Fallback to local catalog file if present on disk
     local_path = Path("catalog") / "shops" / f"{clean_id}_pricing.json"
     if local_path.exists():
         try:
@@ -252,7 +281,11 @@ def sync_shop_pricing_from_cloud(
     """
     clean_id = (shop_id or "SHOP_01").strip().upper()
     if pricing_data is None:
-        pricing_data = fetch_shop_pricing(shop_id=clean_id, base_url_template=base_url_template)
+        pricing_data = fetch_shop_pricing(
+            shop_id=clean_id,
+            base_url_template=base_url_template,
+            db_manager=db_manager,
+        )
 
     if not pricing_data:
         return {"status": "skipped", "updated": 0, "created": 0, "shop_id": clean_id, "reason": "No pricing file"}
@@ -346,7 +379,7 @@ def run_auto_sync_on_startup(
 ) -> Dict[str, Any]:
     """
     Executed silently in background on application startup.
-    1. Downloads any brand-new grocery items added by developer to master catalog
+    1. Downloads any brand-new grocery items added by developer to master catalog (from MongoDB or CDN)
     2. Downloads and updates developer-managed retail prices and custom products for this specific shop
     Never throws uncaught exceptions or blocks offline store operations.
     """

@@ -171,6 +171,65 @@ class SettingsView(QWidget):
         t2_layout.addStretch()
         self.tabs.addTab(tab2, "Database & Multi-Workstation")
 
+        # Tab 3: Cloud & MongoDB Integration
+        tab3 = QWidget()
+        t3_layout = QVBoxLayout(tab3)
+        t3_layout.setContentsMargins(16, 16, 16, 16)
+        t3_layout.setSpacing(14)
+
+        # Store Identifier
+        id_group = QGroupBox("1. Multi-Store / Branch Identification")
+        id_group.setStyleSheet("font-weight: 600; color: #1E293B;")
+        form_id = QFormLayout(id_group)
+        self.cloud_shop_id_input = QLineEdit()
+        self.cloud_shop_id_input.setPlaceholderText("e.g. SHOP_01, SHOP_02, SHOP_03")
+        form_id.addRow("Store Code / Branch ID *:", self.cloud_shop_id_input)
+        id_hint = QLabel("Unique identifier used to isolate sales, custom pricing, and reports for this specific shop.")
+        id_hint.setStyleSheet("font-size: 11px; color: #64748B; font-weight: normal;")
+        form_id.addRow("", id_hint)
+        t3_layout.addWidget(id_group)
+
+        # MongoDB Cloud Sync Group
+        mongo_group = QGroupBox("2. Central MongoDB Cloud Database Sync")
+        mongo_group.setStyleSheet("font-weight: 600; color: #1E293B;")
+        form_m = QFormLayout(mongo_group)
+
+        self.mongo_enable_check = QCheckBox("Enable Background MongoDB Cloud Sync")
+        self.mongo_enable_check.setStyleSheet("color: #059669; font-weight: 700;")
+        form_m.addRow("", self.mongo_enable_check)
+
+        self.mongo_uri_input = QLineEdit()
+        self.mongo_uri_input.setPlaceholderText("e.g. mongodb+srv://username:password@cluster0.mongodb.net/")
+        form_m.addRow("MongoDB Atlas URI:", self.mongo_uri_input)
+
+        self.mongo_db_input = QLineEdit("aj_billing_cloud")
+        form_m.addRow("Database Name:", self.mongo_db_input)
+
+        m_test_box = QHBoxLayout()
+        self.mongo_test_btn = QPushButton("Test MongoDB Connection")
+        self.mongo_test_btn.setObjectName("SecondaryBtn")
+        self.mongo_test_btn.clicked.connect(self._handle_test_mongo)
+        m_test_box.addWidget(self.mongo_test_btn)
+
+        self.mongo_test_lbl = QLabel()
+        self.mongo_test_lbl.setStyleSheet("font-weight: 600;")
+        m_test_box.addWidget(self.mongo_test_lbl)
+        m_test_box.addStretch()
+        form_m.addRow("", m_test_box)
+
+        m_desc = QLabel(
+            "💡 When enabled, every completed bill and stock update is automatically synced to your central MongoDB Atlas cluster in the background.\n"
+            "• Local POS checkout stays 100% offline and instant (zero lag).\n"
+            "• You can view real-time sales for all 3 shops centrally on MongoDB."
+        )
+        m_desc.setStyleSheet("font-size: 11px; color: #475569; font-weight: normal; padding: 6px 0;")
+        m_desc.setWordWrap(True)
+        form_m.addRow("", m_desc)
+
+        t3_layout.addWidget(mongo_group)
+        t3_layout.addStretch()
+        self.tabs.addTab(tab3, "Cloud & MongoDB Sync")
+
         layout.addWidget(self.tabs)
 
     def load_settings(self):
@@ -207,6 +266,17 @@ class SettingsView(QWidget):
             self.user_input.setText(cfg.username)
 
             self._toggle_db_inputs()
+
+            # Load Shop Code & MongoDB Config
+            try:
+                self.cloud_shop_id_input.setText(self.settings_service.get_cloud_shop_id())
+                from src.services.mongo_service import MongoSyncService
+                m_cfg = MongoSyncService(self.db).get_config()
+                self.mongo_enable_check.setChecked(m_cfg.get("enabled", False))
+                self.mongo_uri_input.setText(m_cfg.get("uri", ""))
+                self.mongo_db_input.setText(m_cfg.get("database_name", "aj_billing_cloud"))
+            except Exception:
+                pass
 
         except Exception as e:
             pass
@@ -250,6 +320,27 @@ class SettingsView(QWidget):
             self.settings_service.update_shop_details(self.current_session, details)
             if hasattr(self, "cloud_shop_id_input") and self.cloud_shop_id_input.text().strip():
                 self.settings_service.set_cloud_shop_id(self.cloud_shop_id_input.text().strip())
+
+            # Save MongoDB Configuration
+            if hasattr(self, "mongo_uri_input"):
+                from src.services.mongo_service import MongoSyncService
+                MongoSyncService(self.db).save_config(
+                    uri=self.mongo_uri_input.text().strip(),
+                    database_name=self.mongo_db_input.text().strip(),
+                    enabled=self.mongo_enable_check.isChecked(),
+                )
+
             QMessageBox.information(self, "Settings Saved", "System and Shop configuration updated successfully.")
         except Exception as e:
             QMessageBox.critical(self, "Error Saving Settings", str(e))
+
+    def _handle_test_mongo(self):
+        from src.services.mongo_service import MongoSyncService
+        uri = self.mongo_uri_input.text().strip()
+        ok, msg = MongoSyncService(self.db).test_connection(uri)
+        if ok:
+            self.mongo_test_lbl.setText(f"✓ {msg}")
+            self.mongo_test_lbl.setStyleSheet("color: #16A34A; font-weight: 600;")
+        else:
+            self.mongo_test_lbl.setText(f"✕ {msg}")
+            self.mongo_test_lbl.setStyleSheet("color: #DC2626; font-weight: 600;")

@@ -35,6 +35,8 @@ dependencies = [
     "matplotlib>=3.8.0",
     "python-barcode>=0.15.0",
     "pydantic>=2.7.0",
+    "pymongo>=4.8.0",
+    "dnspython>=2.6.0",
 ]
 
 [project.optional-dependencies]

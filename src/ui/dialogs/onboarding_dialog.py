@@ -66,6 +66,11 @@ class OnboardingDialog(QDialog):
         form1 = QFormLayout(shop_group)
         form1.setLabelAlignment(Qt.AlignRight)
 
+        self.shop_id_input = QLineEdit()
+        self.shop_id_input.setText("SHOP_01")
+        self.shop_id_input.setPlaceholderText("e.g. SHOP_01, SHOP_02, SHOP_03")
+        form1.addRow("Store / Branch Code *:", self.shop_id_input)
+
         self.shop_name_input = QLineEdit()
         self.shop_name_input.setPlaceholderText("e.g. Sri Murugan Supermarket")
         form1.addRow("Shop Trade Name *:", self.shop_name_input)
@@ -139,6 +144,7 @@ class OnboardingDialog(QDialog):
         layout.addLayout(btn_box)
 
     def _handle_setup(self):
+        shop_id = self.shop_id_input.text().strip().upper() or "SHOP_01"
         shop_name = self.shop_name_input.text().strip()
         legal_name = self.legal_name_input.text().strip() or shop_name
         gstin = self.gstin_input.text().strip().upper()
@@ -183,6 +189,9 @@ class OnboardingDialog(QDialog):
                 admin_full_name=admin_name,
                 business_profile=profile_key,
             )
+
+            from src.services.settings_service import SettingsService
+            SettingsService(self.db).set_cloud_shop_id(shop_id)
 
             # Auto-seed starter catalog if checked
             if self.load_catalog_check.isChecked():

@@ -15,6 +15,7 @@ from src.services.purchase_service import PurchaseService
 from src.services.reporting_service import ReportingService
 from src.services.settings_service import SettingsService
 from src.services.tax_service import TaxEngine, round_currency
+from src.services.mongo_service import MongoSyncService
 from src.services.master_catalog_service import lookup_barcode, seed_starter_catalog
 from src.services.cloud_sync_service import (
     fetch_cloud_catalog,
@@ -58,4 +59,5 @@ __all__ = [
     "sync_shop_pricing_from_cloud",
     "run_auto_sync_on_startup",
     "DEFAULT_SHOP_PRICING_URL_TEMPLATE",
+    "MongoSyncService",
 ]

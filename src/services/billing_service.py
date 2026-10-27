@@ -265,7 +265,19 @@ class BillingService:
 
             session.flush()
             logger.info(f"Sale completed successfully: Invoice {invoice_num}, Total: ₹{summary.grand_total}")
-            return self._format_sale_dict(sale)
+            sale_dict = self._format_sale_dict(sale)
+
+            # Asynchronously sync to MongoDB Atlas if configured (never blocks local checkout)
+            try:
+                from src.services.mongo_service import MongoSyncService
+                from src.services.settings_service import SettingsService
+                mongo_svc = MongoSyncService(self.db)
+                shop_id = SettingsService(self.db).get_cloud_shop_id()
+                mongo_svc.sync_sale_async(sale_dict, shop_id)
+            except Exception as e:
+                logger.debug(f"MongoDB background sync trigger error: {e}")
+
+            return sale_dict
 
     def get_invoice(self, invoice_number: str) -> Optional[Dict[str, Any]]:
         """Retrieves a completed invoice for viewing or printing."""
